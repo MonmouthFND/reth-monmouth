@@ -1,0 +1,32 @@
+[package]
+name = "monmouth-evm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Internal
+monmouth-primitives.workspace = true
+monmouth-chain-config.workspace = true
+
+# Reth
+reth-evm.workspace = true
+reth-primitives.workspace = true
+reth-revm.workspace = true
+reth-chainspec.workspace = true
+reth-consensus.workspace = true
+
+# Revm
+revm.workspace = true
+revm-primitives.workspace = true
+
+# Alloy
+alloy-primitives.workspace = true
+alloy-sol-types.workspace = true
+
+# Utils
+tracing.workspace = true
+thiserror.workspace = true

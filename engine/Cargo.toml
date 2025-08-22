@@ -1,0 +1,36 @@
+[package]
+name = "monmouth-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Internal
+monmouth-primitives.workspace = true
+monmouth-chain-config.workspace = true
+
+# Reth
+reth-primitives.workspace = true
+reth-provider.workspace = true
+reth-payload-builder.workspace = true
+reth-rpc-types.workspace = true
+reth-consensus.workspace = true
+
+# Alloy
+alloy-primitives.workspace = true
+alloy-consensus.workspace = true
+
+# Async
+tokio.workspace = true
+futures.workspace = true
+async-trait.workspace = true
+
+# Utils
+tracing.workspace = true
+parking_lot.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true

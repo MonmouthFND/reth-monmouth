@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  monmouth-node:
+    build: .
+    container_name: monmouth-l2
+    ports:
+      - "30303:30303"
+      - "30303:30303/udp"
+      - "8545:8545"  # HTTP RPC
+      - "8546:8546"  # WebSocket RPC
+      - "8551:8551"  # Engine API
+      - "50051:50051"  # ExEx gRPC
+    volumes:
+      - ./data:/data
+      - ./jwt:/jwt:ro
+    environment:
+      - RUST_LOG=info
+    command:
+      - node
+      - --datadir=/data
+      - --http
+      - --http.addr=0.0.0.0
+      - --http.corsdomain=*
+      - --http.api=eth,net,web3,txpool,debug,trace
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.origins=*
+      - --ws.api=eth,net,web3,txpool,debug,trace
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=8551
+      - --metrics=0.0.0.0:9001
+      - --enable-agent-pool
+      - --enable-exex-host
+      - --sequencer
+    networks:
+      - monmouth-network
+    restart: unless-stopped
+
+  # Example ExEx classification service
+  exex-classifier:
+    image: monmouth/exex-classifier:latest
+    container_name: monmouth-classifier
+    ports:
+      - "50052:50052"
+    environment:
+      - RUST_LOG=info
+      - SERVICE_PORT=50052
+    networks:
+      - monmouth-network
+    depends_on:
+      - monmouth-node
+
+  # Example ExEx SVM service  
+  exex-svm:
+    image: monmouth/exex-svm:latest
+    container_name: monmouth-svm
+    ports:
+      - "50053:50053"
+    environment:
+      - RUST_LOG=info
+      - SERVICE_PORT=50053
+    networks:
+      - monmouth-network
+    depends_on:
+      - monmouth-node
+
+  # Example ExEx RAG memory service
+  exex-rag:
+    image: monmouth/exex-rag:latest
+    container_name: monmouth-rag
+    ports:
+      - "50054:50054"
+    environment:
+      - RUST_LOG=info
+      - SERVICE_PORT=50054
+    networks:
+      - monmouth-network
+    depends_on:
+      - monmouth-node
+
+networks:
+  monmouth-network:
+    driver: bridge
+
+volumes:
+  data:

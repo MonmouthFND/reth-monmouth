@@ -1,0 +1,98 @@
+[workspace]
+members = [
+    "node",
+    "chain-config",
+    "evm",
+    "txpool",
+    "engine",
+    "exex-host",
+    "primitives",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.76"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/monmouth/monmouth-node"
+repository = "https://github.com/monmouth/monmouth-node"
+
+[workspace.dependencies]
+# Reth dependencies
+reth = { version = "1.0.6", default-features = false }
+reth-chainspec = { version = "1.0.6" }
+reth-consensus = { version = "1.0.6" }
+reth-db = { version = "1.0.6" }
+reth-evm = { version = "1.0.6" }
+reth-node-api = { version = "1.0.6" }
+reth-node-builder = { version = "1.0.6" }
+reth-node-core = { version = "1.0.6" }
+reth-node-ethereum = { version = "1.0.6" }
+reth-payload-builder = { version = "1.0.6" }
+reth-primitives = { version = "1.0.6" }
+reth-provider = { version = "1.0.6" }
+reth-revm = { version = "1.0.6" }
+reth-rpc = { version = "1.0.6" }
+reth-rpc-types = { version = "1.0.6" }
+reth-tasks = { version = "1.0.6" }
+reth-transaction-pool = { version = "1.0.6" }
+reth-trie = { version = "1.0.6" }
+
+# Alloy dependencies
+alloy-chains = "0.1"
+alloy-consensus = "0.5"
+alloy-eips = "0.5"
+alloy-genesis = "0.5"
+alloy-primitives = "0.9"
+alloy-rlp = "0.3"
+alloy-sol-types = "0.9"
+
+# Revm dependencies
+revm = { version = "14", default-features = false }
+revm-primitives = { version = "10", default-features = false }
+
+# Async & networking
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# gRPC & protobuf
+tonic = "0.12"
+prost = "0.13"
+tonic-build = "0.12"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+
+# Error handling
+eyre = "0.6"
+thiserror = "1.0"
+
+# Logging & metrics
+tracing = "0.1"
+tracing-subscriber = "0.3"
+metrics = "0.23"
+
+# Utils
+once_cell = "1.19"
+parking_lot = "0.12"
+clap = { version = "4", features = ["derive"] }
+bytes = "1.5"
+hex = "0.4"
+
+# Internal dependencies
+monmouth-primitives = { path = "primitives" }
+monmouth-chain-config = { path = "chain-config" }
+monmouth-evm = { path = "evm" }
+monmouth-txpool = { path = "txpool" }
+monmouth-engine = { path = "engine" }
+monmouth-exex-host = { path = "exex-host" }
+monmouth-node = { path = "node" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

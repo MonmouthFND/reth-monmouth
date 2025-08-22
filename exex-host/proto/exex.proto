@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package exex;
+
+service ExExService {
+    rpc StreamHeaders(HeaderFilter) returns (stream HeaderNotification);
+    rpc StreamBlocks(BlockFilter) returns (stream BlockNotification);
+    rpc StreamReceipts(ReceiptFilter) returns (stream ReceiptNotification);
+    rpc StreamLogs(LogFilter) returns (stream LogNotification);
+    rpc ClassifyTransaction(TransactionRequest) returns (ClassificationResponse);
+    rpc FetchContext(TransactionRequest) returns (ContextResponse);
+    rpc CreateExecutionPlan(ExecutionPlanRequest) returns (ExecutionPlanResponse);
+    rpc HealthCheck(Empty) returns (HealthResponse);
+}
+
+message Empty {}
+
+message HeaderFilter {
+    optional uint64 chain_id = 1;
+    optional uint64 from_timestamp = 2;
+    optional uint64 to_timestamp = 3;
+}
+
+message BlockFilter {
+    optional uint32 min_transactions = 1;
+    repeated string beneficiary_addresses = 2;
+}
+
+message ReceiptFilter {
+    repeated string contract_addresses = 1;
+    optional bool only_successful = 2;
+}
+
+message LogFilter {
+    repeated string addresses = 1;
+    repeated bytes topics = 2;
+    optional uint64 from_block = 3;
+    optional uint64 to_block = 4;
+}
+
+message HeaderNotification {
+    bytes hash = 1;
+    uint64 number = 2;
+    uint64 timestamp = 3;
+    string beneficiary = 4;
+    uint64 gas_limit = 5;
+    uint64 gas_used = 6;
+}
+
+message BlockNotification {
+    bytes hash = 1;
+    uint64 number = 2;
+    repeated Transaction transactions = 3;
+    uint64 timestamp = 4;
+}
+
+message Transaction {
+    bytes hash = 1;
+    string from = 2;
+    optional string to = 3;
+    bytes value = 4;
+    bytes input = 5;
+    uint64 gas_limit = 6;
+    uint64 nonce = 7;
+}
+
+message ReceiptNotification {
+    bytes transaction_hash = 1;
+    bool success = 2;
+    uint64 gas_used = 3;
+    repeated Log logs = 4;
+}
+
+message Log {
+    string address = 1;
+    repeated bytes topics = 2;
+    bytes data = 3;
+    uint64 block_number = 4;
+    uint32 log_index = 5;
+}
+
+message LogNotification {
+    Log log = 1;
+    bytes transaction_hash = 2;
+}
+
+message TransactionRequest {
+    Transaction transaction = 1;
+}
+
+message ClassificationResponse {
+    string tx_type = 1;
+    string execution_path = 2;
+    double confidence = 3;
+    optional string intent = 4;
+    bool requires_context = 5;
+    optional uint64 estimated_compute_units = 6;
+}
+
+message ContextResponse {
+    repeated TransactionContext contexts = 1;
+}
+
+message TransactionContext {
+    string context_type = 1;
+    bytes data = 2;
+    double relevance_score = 3;
+    uint64 timestamp = 4;
+}
+
+message ExecutionPlanRequest {
+    Transaction transaction = 1;
+    ClassificationResponse classification = 2;
+}
+
+message ExecutionPlanResponse {
+    repeated ExecutionStep steps = 1;
+    bytes total_gas_estimate = 2;
+    bool requires_witness = 3;
+    bool parallel_execution = 4;
+}
+
+message ExecutionStep {
+    string step_type = 1;
+    optional string target = 2;
+    bytes data = 3;
+    uint64 gas_limit = 4;
+    bytes value = 5;
+}
+
+message HealthResponse {
+    bool healthy = 1;
+    string version = 2;
+    uint64 uptime_seconds = 3;
+}

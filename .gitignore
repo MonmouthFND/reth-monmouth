@@ -1,0 +1,38 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Node data
+data/
+logs/
+jwt/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Build artifacts
+*.log
+*.pid
+*.seed
+
+# Coverage
+coverage/
+*.lcov
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

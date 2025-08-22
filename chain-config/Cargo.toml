@@ -1,0 +1,30 @@
+[package]
+name = "monmouth-chain-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Internal
+monmouth-primitives.workspace = true
+
+# Reth
+reth-chainspec.workspace = true
+reth-primitives.workspace = true
+reth-node-core.workspace = true
+
+# Alloy
+alloy-chains.workspace = true
+alloy-genesis.workspace = true
+alloy-primitives.workspace = true
+alloy-consensus.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Utils
+once_cell.workspace = true
