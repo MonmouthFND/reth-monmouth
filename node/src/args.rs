@@ -1,10 +1,10 @@
-use clap::Parser;
+use clap::Args;
 use monmouth_primitives::AgentPoolConfig;
 use monmouth_engine::SequencerConfig;
 use monmouth_exex_host::ExExHostConfig;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Parser, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Args, Serialize, Deserialize, Default)]
 pub struct MonmouthNodeArgs {
     #[arg(long, help = "Enable agent-aware transaction pool")]
     pub enable_agent_pool: bool,

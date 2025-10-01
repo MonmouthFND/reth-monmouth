@@ -7,6 +7,10 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "export-genesis"
+path = "src/bin/export_genesis.rs"
+
 [dependencies]
 # Internal
 monmouth-primitives.workspace = true

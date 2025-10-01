@@ -1,5 +1,5 @@
 use reth_chainspec::Chain;
-use alloy_genesis::{Genesis, GenesisAccount};
+use alloy_genesis::{ChainConfig, Genesis, GenesisAccount};
 use alloy_primitives::{address, b256, Address, B256, U256};
 use monmouth_primitives::{
     MONMOUTH_CHAIN_ID, DEFAULT_L2_GAS_LIMIT, MIN_BASE_FEE_PER_GAS,
@@ -26,15 +26,33 @@ pub fn build_monmouth_chain_spec() -> ChainSpec {
         .build()
 }
 
-fn build_genesis() -> Genesis {
+pub fn build_genesis() -> Genesis {
     let mut accounts = BTreeMap::new();
-    
+
     add_funded_accounts(&mut accounts);
-    
+
     add_system_accounts(&mut accounts);
-    
+
+    let mut chain_config = ChainConfig::default();
+    chain_config.chain_id = MONMOUTH_CHAIN_ID;
+    chain_config.homestead_block = Some(0);
+    chain_config.eip150_block = Some(0);
+    chain_config.eip155_block = Some(0);
+    chain_config.eip158_block = Some(0);
+    chain_config.byzantium_block = Some(0);
+    chain_config.constantinople_block = Some(0);
+    chain_config.petersburg_block = Some(0);
+    chain_config.istanbul_block = Some(0);
+    chain_config.berlin_block = Some(0);
+    chain_config.london_block = Some(0);
+    chain_config.merge_netsplit_block = Some(0);
+    chain_config.shanghai_time = Some(0);
+    chain_config.cancun_time = Some(0);
+    chain_config.prague_time = Some(0);
+    chain_config.terminal_total_difficulty_passed = true;
+
     Genesis {
-        config: Default::default(),
+        config: chain_config,
         alloc: accounts,
         timestamp: 0,
         extra_data: b"Monmouth L2 Genesis".to_vec().into(),
@@ -105,6 +123,12 @@ fn add_system_accounts(accounts: &mut BTreeMap<Address, GenesisAccount>) {
 
 pub fn is_monmouth_chain(chain_id: u64) -> bool {
     chain_id == MONMOUTH_CHAIN_ID
+}
+
+/// Exports the Monmouth genesis configuration as a JSON string
+pub fn export_genesis_json() -> Result<String, serde_json::Error> {
+    let genesis = build_genesis();
+    serde_json::to_string_pretty(&genesis)
 }
 
 #[cfg(test)]

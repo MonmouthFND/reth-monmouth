@@ -14,7 +14,7 @@ mkdir -p ./data
 # Start the node with development configuration
 ./target/release/monmouth node \
     --datadir ./data \
-    --chain monmouth \
+    --chain ./genesis.json \
     --http \
     --http.addr 127.0.0.1 \
     --http.port 8545 \

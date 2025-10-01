@@ -35,6 +35,9 @@ cargo clippy --all -- -D warnings
 # Generate protobuf code (required after modifying .proto files)
 cd exex-host && cargo build --build-dependencies
 
+# Regenerate genesis.json (if chain config changes)
+cargo run --release -p monmouth-chain-config --bin export-genesis > genesis.json
+
 # Start development node (HTTP RPC: 8545, WS: 8546, Engine: 8551, ExEx: 50051)
 ./scripts/start_dev.sh
 
@@ -122,10 +125,61 @@ The sequencer (`engine/src/sequencer.rs`) operates with:
 
 ### Node Configuration Flow
 
-1. CLI args parsed in `node/src/args.rs`
+1. CLI args parsed in `node/src/args.rs` using Reth's CLI extension system
 2. Configuration structs created for each module
 3. Components built in `node/src/node.rs` using Reth's builder pattern
 4. Services started in sequence: ExEx host → Sequencer → RPC
+
+### Genesis Configuration and Chain Loading
+
+The node uses a custom genesis.json file instead of built-in chain specs:
+
+**Genesis File Generation:**
+- Genesis configuration is defined in `chain-config/src/lib.rs`
+- Export binary at `chain-config/src/bin/export_genesis.rs` generates the JSON
+- Run `cargo run --release -p monmouth-chain-config --bin export-genesis > genesis.json` to regenerate
+- The genesis.json includes:
+  - Chain ID: 7750
+  - All hardforks activated at block 0 (Prague-enabled)
+  - 10 pre-funded Anvil test accounts (10,000 ETH each)
+  - System accounts (sequencer and L1 fee vaults)
+
+**Chain Loading:**
+- Node loads chain spec via `--chain ./genesis.json` flag
+- Uses `Cli::<EthereumChainSpecParser, MonmouthNodeArgs>` pattern
+- EthereumChainSpecParser handles both built-in chains and custom JSON files
+
+### CLI Extension Pattern
+
+Monmouth extends Reth's CLI with custom arguments following this pattern:
+
+**Implementation (`node/src/args.rs`):**
+```rust
+#[derive(Debug, Clone, Args, Serialize, Deserialize, Default)]
+pub struct MonmouthNodeArgs {
+    #[arg(long)]
+    pub enable_agent_pool: bool,
+
+    #[arg(long)]
+    pub exex_endpoint: Option<String>,
+    // ... other custom args
+}
+```
+
+**Integration (`node/src/main.rs`):**
+```rust
+Cli::<EthereumChainSpecParser, MonmouthNodeArgs>::parse()
+    .run(async move |builder, args| {
+        // args contains parsed MonmouthNodeArgs
+        // builder is the node builder
+    })
+```
+
+**Key Points:**
+- Use `clap::Args` (not `clap::Parser`) for CLI extension structs
+- Second generic parameter to `Cli<>` enables custom arguments
+- All Reth standard flags remain available
+- Custom args appear in `--help` output automatically
 
 ### Critical Dependencies
 
@@ -191,7 +245,14 @@ When deploying to production:
 **Changing L2 parameters**:
 1. Chain parameters in `primitives/src/lib.rs`
 2. Genesis configuration in `chain-config/src/lib.rs`
-3. Sequencer timing in `engine/src/config.rs`
+3. Regenerate genesis.json: `cargo run --release -p monmouth-chain-config --bin export-genesis > genesis.json`
+4. Sequencer timing in `engine/src/config.rs`
+
+**Adding custom CLI arguments**:
+1. Add argument to `MonmouthNodeArgs` in `node/src/args.rs` using `#[arg(long)]` attribute
+2. Use `clap::Args` derive macro (not `Parser`)
+3. Access args in `node/src/main.rs` via the `args` parameter in CLI run closure
+4. Custom args automatically appear in `--help` output
 
 ### Environment Variables
 
