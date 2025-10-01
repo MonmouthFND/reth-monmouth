@@ -15,9 +15,12 @@ monmouth-chain-config.workspace = true
 # Reth
 reth-evm.workspace = true
 reth-primitives.workspace = true
+reth-primitives-traits.workspace = true
 reth-revm.workspace = true
 reth-chainspec.workspace = true
 reth-consensus.workspace = true
+reth-node-api.workspace = true
+reth-evm-ethereum.workspace = true
 
 # Revm
 revm.workspace = true

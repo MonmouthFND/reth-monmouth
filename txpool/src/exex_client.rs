@@ -1,11 +1,10 @@
-use alloy_primitives::{Address, Bytes, B256};
+use alloy_primitives::U256;
 use monmouth_primitives::{
-    ClassificationResult, ExecutionPlan, ExecutionStep, StepType,
+    ClassificationResult, ExecutionPlan,
     TransactionContext, TransactionType, ExecutionPath, IntentClassification,
 };
 use reth_primitives::TransactionSigned;
 use thiserror::Error;
-use tonic::Request;
 
 #[derive(Debug, Error)]
 pub enum ExExClientError {
@@ -30,7 +29,7 @@ impl ExExClient {
 
     pub async fn classify_transaction(
         &self,
-        tx: TransactionSigned,
+        _tx: TransactionSigned,
     ) -> Result<ClassificationResult, ExExClientError> {
         Ok(ClassificationResult {
             tx_type: TransactionType::StandardEvm,
@@ -44,19 +43,19 @@ impl ExExClient {
 
     pub async fn fetch_context(
         &self,
-        tx: TransactionSigned,
+        _tx: TransactionSigned,
     ) -> Result<Vec<TransactionContext>, ExExClientError> {
         Ok(Vec::new())
     }
 
     pub async fn create_execution_plan(
         &self,
-        tx: TransactionSigned,
-        classification: ClassificationResult,
+        _tx: TransactionSigned,
+        _classification: ClassificationResult,
     ) -> Result<ExecutionPlan, ExExClientError> {
         Ok(ExecutionPlan {
             steps: vec![],
-            total_gas_estimate: 21000u64.into(),
+            total_gas_estimate: U256::from(21000u64),
             requires_witness: false,
             parallel_execution: false,
         })

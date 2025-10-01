@@ -1,18 +1,12 @@
-use alloy_primitives::{Address, B256, U256};
-use async_trait::async_trait;
-use futures::StreamExt;
+use alloy_primitives::B256;
 use monmouth_primitives::{
     AgentPoolConfig, ClassificationResult, ExecutionPath, ExecutionPlan,
-    TransactionContext, TransactionType,
+    TransactionContext,
 };
 use parking_lot::RwLock;
-use reth_primitives::{PooledTransactionsElement, TransactionSigned};
-use reth_transaction_pool::{
-    error::PoolResult, traits::TransactionPool, BestTransactions,
-    ValidPoolTransaction, TransactionOrigin,
-};
+use reth_primitives::TransactionSigned;
+use reth_transaction_pool::TransactionPool;
 use std::{collections::HashMap, sync::Arc, time::Instant};
-use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
 use crate::classifier::TransactionClassifier;
@@ -81,7 +75,7 @@ where
                     );
 
                     if result.confidence >= self.config.confidence_threshold {
-                        self.classified_txs.write().insert(tx_hash, result.clone());
+                        self.classified_txs.write().insert(*tx_hash, result.clone());
                         return result;
                     }
                 }
@@ -95,7 +89,7 @@ where
         }
 
         let fallback_result = self.classifier.classify(tx).await;
-        self.classified_txs.write().insert(tx_hash, fallback_result.clone());
+        self.classified_txs.write().insert(*tx_hash, fallback_result.clone());
         fallback_result
     }
 
@@ -110,7 +104,7 @@ where
             match exex.fetch_context(tx.clone()).await {
                 Ok(contexts) => {
                     debug!("Fetched {} contexts for transaction {}", contexts.len(), tx_hash);
-                    self.contexts.write().insert(tx_hash, contexts.clone());
+                    self.contexts.write().insert(*tx_hash, contexts.clone());
                     return contexts;
                 }
                 Err(e) => {
@@ -144,7 +138,7 @@ where
                         tx_hash,
                         plan.steps.len()
                     );
-                    self.execution_plans.write().insert(tx_hash, plan.clone());
+                    self.execution_plans.write().insert(*tx_hash, plan.clone());
                     return Some(plan);
                 }
                 Err(e) => {

@@ -1,14 +1,14 @@
 use crate::proto::{
     ex_ex_service_server::ExExService, BlockFilter, BlockNotification, ClassificationResponse,
-    ContextResponse, Empty, ExecutionPlanRequest, ExecutionPlanResponse, ExecutionStep,
-    HeaderFilter, HeaderNotification, HealthResponse, Log, LogFilter, LogNotification,
-    ReceiptFilter, ReceiptNotification, Transaction, TransactionContext, TransactionRequest,
+    ContextResponse, Empty, ExecutionPlanRequest, ExecutionPlanResponse,
+    HeaderFilter, HeaderNotification, HealthResponse, LogFilter, LogNotification,
+    ReceiptFilter, ReceiptNotification, TransactionRequest,
 };
 use alloy_primitives::hex;
 use futures::Stream;
 use reth_primitives::{Block, Header, Receipt};
 use std::pin::Pin;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
@@ -46,8 +46,8 @@ impl ExExService for ExExServiceImpl {
         request: Request<HeaderFilter>,
     ) -> Result<Response<Self::StreamHeadersStream>, Status> {
         debug!("Stream headers requested");
-        
-        let filter = request.into_inner();
+
+        let _filter = request.into_inner();
         let rx = self.header_tx.subscribe();
         let stream = BroadcastStream::new(rx);
 
@@ -78,8 +78,8 @@ impl ExExService for ExExServiceImpl {
         request: Request<BlockFilter>,
     ) -> Result<Response<Self::StreamBlocksStream>, Status> {
         debug!("Stream blocks requested");
-        
-        let filter = request.into_inner();
+
+        let _filter = request.into_inner();
         let rx = self.block_tx.subscribe();
         let stream = BroadcastStream::new(rx);
 
@@ -105,7 +105,7 @@ impl ExExService for ExExServiceImpl {
 
     async fn stream_receipts(
         &self,
-        request: Request<ReceiptFilter>,
+        _request: Request<ReceiptFilter>,
     ) -> Result<Response<Self::StreamReceiptsStream>, Status> {
         debug!("Stream receipts requested");
         
@@ -138,7 +138,7 @@ impl ExExService for ExExServiceImpl {
 
     async fn stream_logs(
         &self,
-        request: Request<LogFilter>,
+        _request: Request<LogFilter>,
     ) -> Result<Response<Self::StreamLogsStream>, Status> {
         debug!("Stream logs requested");
         
@@ -154,7 +154,7 @@ impl ExExService for ExExServiceImpl {
 
     async fn classify_transaction(
         &self,
-        request: Request<TransactionRequest>,
+        _request: Request<TransactionRequest>,
     ) -> Result<Response<ClassificationResponse>, Status> {
         debug!("Classify transaction requested");
 
@@ -172,7 +172,7 @@ impl ExExService for ExExServiceImpl {
 
     async fn fetch_context(
         &self,
-        request: Request<TransactionRequest>,
+        _request: Request<TransactionRequest>,
     ) -> Result<Response<ContextResponse>, Status> {
         debug!("Fetch context requested");
 
@@ -185,7 +185,7 @@ impl ExExService for ExExServiceImpl {
 
     async fn create_execution_plan(
         &self,
-        request: Request<ExecutionPlanRequest>,
+        _request: Request<ExecutionPlanRequest>,
     ) -> Result<Response<ExecutionPlanResponse>, Status> {
         debug!("Create execution plan requested");
 
@@ -201,7 +201,7 @@ impl ExExService for ExExServiceImpl {
 
     async fn health_check(
         &self,
-        request: Request<Empty>,
+        _request: Request<Empty>,
     ) -> Result<Response<HealthResponse>, Status> {
         let uptime = self.start_time.elapsed().unwrap_or_default().as_secs();
 

@@ -1,4 +1,5 @@
-use alloy_primitives::{hex, Address, Bytes};
+use alloy_primitives::{hex, Address};
+use alloy_consensus::transaction::Transaction;
 use async_trait::async_trait;
 use monmouth_primitives::{
     ClassificationResult, ExecutionPath, IntentClassification,

@@ -1,18 +1,28 @@
 use clap::Parser;
-use monmouth_node::{MonmouthNode, MonmouthNodeArgs};
+use monmouth_node::MonmouthNode;
 use reth::cli::Cli;
-use reth_node_builder::{NodeBuilder, NodeHandle};
+use reth_ethereum_cli::chainspec::EthereumChainSpecParser;
+use reth_node_builder::NodeHandle;
 use tracing::info;
 
-#[tokio::main]
-async fn main() -> eyre::Result<()> {
-    reth::cli::Cli::<MonmouthNodeArgs>::parse().run(|builder, args| async move {
-        let handle = builder
-            .with_types::<MonmouthNode>()
-            .with_components(MonmouthNode::components(&args))
-            .launch()
-            .await?;
+fn main() {
+    reth_cli_util::sigsegv_handler::install();
 
-        handle.wait_for_node_exit().await
-    }).await
+    // Enable backtraces unless a RUST_BACKTRACE value has already been explicitly provided.
+    if std::env::var_os("RUST_BACKTRACE").is_none() {
+        unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
+    }
+
+    if let Err(err) =
+        Cli::<EthereumChainSpecParser>::parse().run(async move |builder, _args| {
+            info!(target: "reth::cli", "Launching Monmouth L2 node");
+            let NodeHandle { node: _, node_exit_future } =
+                builder.node(MonmouthNode::default()).launch().await?;
+
+            node_exit_future.await
+        })
+    {
+        eprintln!("Error: {err:?}");
+        std::process::exit(1);
+    }
 }

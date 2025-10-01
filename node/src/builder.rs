@@ -1,9 +1,6 @@
 use crate::args::MonmouthNodeArgs;
-use monmouth_engine::{L2Sequencer, SequencerHandle};
+use monmouth_engine::L2Sequencer;
 use monmouth_exex_host::ExExHost;
-use monmouth_txpool::{AgentAwarePool, AgentPoolBuilder};
-use reth_node_builder::{NodeBuilder, NodeHandle};
-use std::sync::Arc;
 use tracing::info;
 
 pub struct MonmouthNodeBuilder {
@@ -26,7 +23,7 @@ impl MonmouthNodeBuilder {
             info!("Starting ExEx host service");
             let config = self.args.exex_host_config();
             let host = ExExHost::new(config);
-            host.start().await?;
+            host.start().await.map_err(|e| eyre::eyre!("Failed to start ExEx host: {}", e))?;
             self.exex_host = Some(host);
         }
 
@@ -34,7 +31,7 @@ impl MonmouthNodeBuilder {
             info!("Starting L2 sequencer");
             let config = self.args.sequencer_config();
             let mut sequencer = L2Sequencer::new(config);
-            let _handle = sequencer.start().await?;
+            let _handle = sequencer.start().await.map_err(|e| eyre::eyre!("Failed to start sequencer: {}", e))?;
             self.sequencer = Some(sequencer);
         }
 

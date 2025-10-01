@@ -8,7 +8,7 @@ pub use precompiles::*;
 
 use alloy_primitives::{Address, U256};
 
-pub const MONMOUTH_CHAIN_ID: u64 = 42069;
+pub const MONMOUTH_CHAIN_ID: u64 = 7750;
 
 pub const SEQUENCER_FEE_VAULT: Address = Address::new([0x42; 20]);
 

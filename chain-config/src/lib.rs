@@ -1,4 +1,4 @@
-use alloy_chains::Chain;
+use reth_chainspec::Chain;
 use alloy_genesis::{Genesis, GenesisAccount};
 use alloy_primitives::{address, b256, Address, B256, U256};
 use monmouth_primitives::{
@@ -6,9 +6,8 @@ use monmouth_primitives::{
     SEQUENCER_FEE_VAULT, L1_FEE_VAULT,
 };
 use once_cell::sync::Lazy;
-use reth_chainspec::{BaseFeeParams, ChainSpec, ChainSpecBuilder, ForkCondition};
-use reth_primitives::Header;
-use std::collections::HashMap;
+use reth_chainspec::{ChainSpec, ChainSpecBuilder};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 pub static MONMOUTH_GENESIS_HASH: B256 = b256!("0000000000000000000000000000000000000000000000000000000000000000");
@@ -28,7 +27,7 @@ pub fn build_monmouth_chain_spec() -> ChainSpec {
 }
 
 fn build_genesis() -> Genesis {
-    let mut accounts = HashMap::new();
+    let mut accounts = BTreeMap::new();
     
     add_funded_accounts(&mut accounts);
     
@@ -50,7 +49,7 @@ fn build_genesis() -> Genesis {
     }
 }
 
-fn add_funded_accounts(accounts: &mut HashMap<Address, GenesisAccount>) {
+fn add_funded_accounts(accounts: &mut BTreeMap<Address, GenesisAccount>) {
     const INITIAL_BALANCE: U256 = U256::from_limbs([0, 0, 0x021e19e0c9bab240, 0]); // 10_000 ETH
     
     let funded_addresses = [
@@ -74,12 +73,13 @@ fn add_funded_accounts(accounts: &mut HashMap<Address, GenesisAccount>) {
                 nonce: Some(0),
                 code: None,
                 storage: None,
+                private_key: None,
             },
         );
     }
 }
 
-fn add_system_accounts(accounts: &mut HashMap<Address, GenesisAccount>) {
+fn add_system_accounts(accounts: &mut BTreeMap<Address, GenesisAccount>) {
     accounts.insert(
         SEQUENCER_FEE_VAULT,
         GenesisAccount {
@@ -87,6 +87,7 @@ fn add_system_accounts(accounts: &mut HashMap<Address, GenesisAccount>) {
             nonce: Some(1),
             code: None,
             storage: None,
+            private_key: None,
         },
     );
     
@@ -97,6 +98,7 @@ fn add_system_accounts(accounts: &mut HashMap<Address, GenesisAccount>) {
             nonce: Some(1),
             code: None,
             storage: None,
+            private_key: None,
         },
     );
 }

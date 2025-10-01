@@ -1,6 +1,6 @@
 use alloy_primitives::{Bytes, B256};
 use monmouth_primitives::SequencerBatch;
-use reth_primitives::{Block, TransactionSigned};
+use reth_primitives::Block;
 use std::collections::VecDeque;
 use tracing::{debug, info};
 
@@ -41,7 +41,7 @@ impl BatchBuilder {
         while !self.pending_blocks.is_empty() && transactions.len() < self.max_batch_size * 100 {
             if let Some(block) = self.pending_blocks.pop_front() {
                 state_root = block.header.state_root;
-                transactions.extend(block.body);
+                transactions.extend(block.body.transactions.into_iter());
             }
         }
 

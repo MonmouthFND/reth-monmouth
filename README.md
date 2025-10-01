@@ -102,7 +102,7 @@ docker-compose down
 
 ### Chain Configuration
 
-- **Chain ID**: 42069
+- **Chain ID**: 7750
 - **Genesis Block**: Prague-activated
 - **Gas Limit**: 30M per block
 - **Base Fee**: 1 gwei minimum

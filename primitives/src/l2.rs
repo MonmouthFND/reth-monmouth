@@ -1,5 +1,6 @@
 use alloy_primitives::{Address, Bytes, B256, U256};
-use reth_primitives::{Block, Header, Transaction};
+use alloy_consensus::{EthereumTxEnvelope, TxEip4844};
+use reth_primitives::{Block, Transaction};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,7 +30,7 @@ pub struct SequencerBatch {
     pub epoch_num: u64,
     pub epoch_hash: B256,
     pub timestamp: u64,
-    pub transactions: Vec<Transaction>,
+    pub transactions: Vec<EthereumTxEnvelope<TxEip4844>>,
     pub state_root: B256,
     pub sequencer_address: Address,
 }

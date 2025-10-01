@@ -1,16 +1,13 @@
 use crate::batch_builder::BatchBuilder;
 use crate::config::SequencerConfig;
-use alloy_primitives::{Address, B256, U256};
-use async_trait::async_trait;
-use futures::StreamExt;
-use monmouth_primitives::{L2Block, L2Transaction, SequencerBatch};
+use alloy_primitives::B256;
+use alloy_consensus::Transaction;
 use parking_lot::RwLock;
-use reth_primitives::{Block, Header, TransactionSigned};
+use reth_primitives::TransactionSigned;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
-use tokio::time::{interval, Duration};
-use tracing::{debug, error, info, warn};
+use tokio::time::interval;
+use tracing::{debug, info};
 
 pub struct L2Sequencer {
     config: SequencerConfig,
@@ -93,7 +90,7 @@ impl L2Sequencer {
     async fn produce_block(
         pending_txs: &Arc<RwLock<Vec<TransactionSigned>>>,
         config: &SequencerConfig,
-        current_l1: &Arc<RwLock<(u64, B256)>>,
+        _current_l1: &Arc<RwLock<(u64, B256)>>,
     ) {
         let mut txs = pending_txs.write();
         
@@ -108,7 +105,7 @@ impl L2Sequencer {
         while !txs.is_empty() && block_txs.len() < config.max_block_size {
             if let Some(tx) = txs.first() {
                 let gas_limit = tx.gas_limit();
-                
+
                 if total_gas + gas_limit <= config.max_block_gas {
                     block_txs.push(txs.remove(0));
                     total_gas += gas_limit;
@@ -127,7 +124,7 @@ impl L2Sequencer {
         }
     }
 
-    async fn submit_batch(config: &SequencerConfig) {
+    async fn submit_batch(_config: &SequencerConfig) {
         debug!("Submitting batch to L1");
     }
 

@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, Bytes, B256, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

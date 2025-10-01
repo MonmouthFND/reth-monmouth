@@ -1,106 +1,111 @@
-use crate::args::MonmouthNodeArgs;
 use monmouth_chain_config::MONMOUTH_CHAIN_SPEC;
 use monmouth_evm::MonmouthEvmConfig;
-use reth_node_api::{ConfigureEvm, EngineValidator, NodeTypesWithEngine};
+use reth_chainspec::{ChainSpec, EthChainSpec, EthereumHardforks, Hardforks};
+use reth_ethereum_engine_primitives::{
+    EthBuiltPayload, EthEngineTypes, EthPayloadAttributes, EthPayloadBuilderAttributes,
+};
+use reth_ethereum_primitives::EthPrimitives;
+use reth_evm::eth::spec::EthExecutorSpec;
 use reth_node_builder::{
-    components::{ComponentsBuilder, ConsensusBuilder, ExecutorBuilder, NetworkBuilder, PayloadServiceBuilder, PoolBuilder},
-    BuilderContext, Node, NodeAdapter, NodeComponentsBuilder, PayloadBuilderConfig,
+    components::{
+        BasicPayloadServiceBuilder, ComponentsBuilder, ExecutorBuilder,
+    },
+    node::{FullNodeTypes, NodeTypes},
+    BuilderContext, Node, NodeAdapter,
 };
 use reth_node_ethereum::{
-    EthEngineTypes, EthEvmConfig, EthExecutorProvider, EthereumConsensusBuilder,
-    EthereumEngineValidator, EthereumNetworkBuilder, EthereumPayloadBuilder, EthereumPoolBuilder,
+    EthereumAddOns, EthereumConsensusBuilder, EthereumEthApiBuilder, EthereumEngineValidatorBuilder,
+    EthereumNetworkBuilder, EthereumPayloadBuilder, EthereumPoolBuilder,
 };
-use reth_primitives::Header;
-use std::sync::Arc;
+use reth_payload_primitives::PayloadTypes;
+use reth_provider::EthStorage;
 
-#[derive(Debug, Clone)]
+/// Monmouth L2 node type configuration
+#[derive(Debug, Default, Clone, Copy)]
+#[non_exhaustive]
 pub struct MonmouthNode;
 
 impl MonmouthNode {
-    pub fn components(args: &MonmouthNodeArgs) -> MonmouthComponentsBuilder {
-        MonmouthComponentsBuilder {
-            args: args.clone(),
-        }
+    /// Returns a [`ComponentsBuilder`] configured for Monmouth L2 node
+    pub fn components<Node>() -> ComponentsBuilder<
+        Node,
+        EthereumPoolBuilder,
+        BasicPayloadServiceBuilder<EthereumPayloadBuilder>,
+        EthereumNetworkBuilder,
+        MonmouthExecutorBuilder,
+        EthereumConsensusBuilder,
+    >
+    where
+        Node: FullNodeTypes<
+            Types: NodeTypes<
+                ChainSpec: Hardforks + EthChainSpec + EthereumHardforks + EthExecutorSpec,
+                Primitives = EthPrimitives,
+            >,
+        >,
+        <Node::Types as NodeTypes>::Payload: PayloadTypes<
+            BuiltPayload = EthBuiltPayload,
+            PayloadAttributes = EthPayloadAttributes,
+            PayloadBuilderAttributes = EthPayloadBuilderAttributes,
+        >,
+    {
+        ComponentsBuilder::default()
+            .node_types::<Node>()
+            .pool(EthereumPoolBuilder::default())
+            .executor(MonmouthExecutorBuilder::default())
+            .payload(BasicPayloadServiceBuilder::default())
+            .network(EthereumNetworkBuilder::default())
+            .consensus(EthereumConsensusBuilder::default())
     }
 }
 
-impl NodeTypesWithEngine for MonmouthNode {
-    type Engine = EthEngineTypes;
+impl NodeTypes for MonmouthNode {
+    type Primitives = EthPrimitives;
+    type ChainSpec = ChainSpec;
+    type Storage = EthStorage;
+    type Payload = EthEngineTypes;
 }
 
-impl Node<Self> for MonmouthNode {
-    type ComponentsBuilder = MonmouthComponentsBuilder;
-    type AddOns = ();
+impl<N> Node<N> for MonmouthNode
+where
+    N: FullNodeTypes<Types = Self>,
+{
+    type ComponentsBuilder = ComponentsBuilder<
+        N,
+        EthereumPoolBuilder,
+        BasicPayloadServiceBuilder<EthereumPayloadBuilder>,
+        EthereumNetworkBuilder,
+        MonmouthExecutorBuilder,
+        EthereumConsensusBuilder,
+    >;
+
+    type AddOns = EthereumAddOns<NodeAdapter<N>, EthereumEthApiBuilder, EthereumEngineValidatorBuilder>;
 
     fn components_builder(&self) -> Self::ComponentsBuilder {
-        MonmouthComponentsBuilder::default()
+        Self::components()
     }
 
     fn add_ons(&self) -> Self::AddOns {
-        ()
+        EthereumAddOns::default()
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct MonmouthComponentsBuilder {
-    args: MonmouthNodeArgs,
-}
+/// Monmouth executor builder that uses custom EVM config
+#[derive(Debug, Default, Clone, Copy)]
+#[non_exhaustive]
+pub struct MonmouthExecutorBuilder;
 
-impl MonmouthComponentsBuilder {
-    pub fn new(args: MonmouthNodeArgs) -> Self {
-        Self { args }
-    }
-}
-
-impl<Node> NodeComponentsBuilder<Node> for MonmouthComponentsBuilder
+impl<Types, Node> ExecutorBuilder<Node> for MonmouthExecutorBuilder
 where
-    Node: NodeTypesWithEngine<Engine = EthEngineTypes>,
+    Types: NodeTypes<
+        ChainSpec: Hardforks + EthChainSpec + EthereumHardforks + EthExecutorSpec,
+        Primitives = EthPrimitives,
+    >,
+    Node: FullNodeTypes<Types = Types>,
 {
-    type Components = Components<Node>;
+    type EVM = MonmouthEvmConfig;
 
-    async fn build_components(
-        self,
-        context: &BuilderContext<Node>,
-    ) -> eyre::Result<Self::Components> {
+    async fn build_evm(self, _ctx: &BuilderContext<Node>) -> eyre::Result<Self::EVM> {
         let evm_config = MonmouthEvmConfig::new(MONMOUTH_CHAIN_SPEC.clone());
-        
-        let pool = PoolBuilder::default().build(context)?;
-        
-        let network = NetworkBuilder::default().build(context, pool.clone()).await?;
-        
-        let executor = ExecutorBuilder::default().build(
-            context,
-            pool.clone(),
-            evm_config.clone(),
-        )?;
-        
-        let consensus = ConsensusBuilder::default().build(context)?;
-        
-        let payload_builder = PayloadServiceBuilder::default().build(
-            context,
-            pool.clone(),
-            executor.clone(),
-            consensus.clone(),
-            evm_config.clone(),
-        )?;
-
-        Ok(Components {
-            pool,
-            network,
-            executor,
-            consensus,
-            payload_builder,
-            evm_config,
-        })
+        Ok(evm_config)
     }
-}
-
-#[derive(Debug)]
-pub struct Components<Node: NodeTypesWithEngine> {
-    pub pool: Node::Pool,
-    pub network: Node::Network,
-    pub executor: Node::Executor,
-    pub consensus: Node::Consensus,
-    pub payload_builder: Node::PayloadBuilder,
-    pub evm_config: MonmouthEvmConfig,
 }

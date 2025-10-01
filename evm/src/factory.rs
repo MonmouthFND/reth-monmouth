@@ -1,125 +1,110 @@
-use alloy_primitives::{Address, Bytes, B256, U256};
-use monmouth_chain_config::MONMOUTH_CHAIN_SPEC;
-use monmouth_primitives::MIN_BASE_FEE_PER_GAS;
-use reth_chainspec::ChainSpec;
-use reth_evm::{ConfigureEvm, ConfigureEvmEnv};
-use reth_primitives::{Header, TransactionSigned};
-use reth_revm::{Database, Evm, EvmBuilder};
-use revm_primitives::{
-    AnalysisKind, BlobExcessGasAndPrice, BlockEnv, CfgEnv, CfgEnvWithHandlerCfg,
-    Env, EnvWithHandlerCfg, SpecId, TxEnv,
-};
 use std::sync::Arc;
+use alloy_primitives::Address;
+use monmouth_chain_config::MONMOUTH_CHAIN_SPEC;
+use reth_chainspec::ChainSpec;
+use reth_evm::{ConfigureEngineEvm, EvmEnvFor, ExecutionCtxFor, ExecutableTxIterator};
+use reth_evm_ethereum::EthEvmConfig;
+use reth_node_api::ConfigureEvm;
+use revm_primitives::Precompile;
+use std::collections::HashMap;
 
 use crate::precompiles::MonmouthPrecompileSet;
 
+/// Monmouth EVM configuration that extends Ethereum's EVM config
+/// with custom precompiles for AI/ML operations
 #[derive(Debug, Clone)]
 pub struct MonmouthEvmConfig {
-    chain_spec: Arc<ChainSpec>,
+    /// Base Ethereum EVM configuration
+    inner: EthEvmConfig,
+    /// Custom precompiles for Monmouth
+    precompiles: Arc<HashMap<Address, Precompile>>,
 }
 
 impl MonmouthEvmConfig {
+    /// Create a new Monmouth EVM config with custom precompiles
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
-        Self { chain_spec }
+        let inner = EthEvmConfig::new(chain_spec);
+        let precompile_set = MonmouthPrecompileSet::new();
+        let precompiles = Arc::new(precompile_set.get_precompiles());
+
+        Self {
+            inner,
+            precompiles,
+        }
     }
 
+    /// Create Monmouth config using the default chain spec
     pub fn default_monmouth() -> Self {
         Self::new(MONMOUTH_CHAIN_SPEC.clone())
     }
+
+    /// Get the custom precompiles map
+    pub fn precompiles(&self) -> &HashMap<Address, Precompile> {
+        &self.precompiles
+    }
 }
 
+// Delegate ConfigureEvm implementation to the inner EthEvmConfig
 impl ConfigureEvm for MonmouthEvmConfig {
-    type DefaultExternalContext<'a> = ();
+    type Primitives = <EthEvmConfig as ConfigureEvm>::Primitives;
+    type Error = <EthEvmConfig as ConfigureEvm>::Error;
+    type NextBlockEnvCtx = <EthEvmConfig as ConfigureEvm>::NextBlockEnvCtx;
+    type BlockExecutorFactory = <EthEvmConfig as ConfigureEvm>::BlockExecutorFactory;
+    type BlockAssembler = <EthEvmConfig as ConfigureEvm>::BlockAssembler;
 
-    fn evm<'a, DB: Database + 'a>(&self, db: DB) -> Evm<'a, (), DB> {
-        let spec_id = SpecId::PRAGUE;
-        
-        EvmBuilder::default()
-            .with_db(db)
-            .with_spec_id(spec_id)
-            .append_handler_register(|handler| {
-                let precompiles = MonmouthPrecompileSet::new();
-                handler.pre_execution.load_precompiles = Arc::new(move || precompiles.clone());
-            })
-            .build()
+    fn block_executor_factory(&self) -> &Self::BlockExecutorFactory {
+        self.inner.block_executor_factory()
     }
 
-    fn evm_with_env<'a, DB: Database + 'a>(
-        &self,
-        db: DB,
-        env: EnvWithHandlerCfg,
-    ) -> Evm<'a, (), DB> {
-        let mut evm = self.evm(db);
-        evm.context.evm.env = env.env;
-        evm
+    fn block_assembler(&self) -> &Self::BlockAssembler {
+        self.inner.block_assembler()
     }
 
-    fn evm_with_env_and_inspector<'a, DB, I>(
+    fn evm_env(
         &self,
-        db: DB,
-        env: EnvWithHandlerCfg,
-        inspector: I,
-    ) -> Evm<'a, I, DB>
-    where
-        DB: Database + 'a,
-        I: reth_revm::inspector::Inspector<DB>,
-    {
-        EvmBuilder::default()
-            .with_db(db)
-            .with_external_context(inspector)
-            .with_env_with_handler_cfg(env)
-            .append_handler_register(|handler| {
-                let precompiles = MonmouthPrecompileSet::new();
-                handler.pre_execution.load_precompiles = Arc::new(move || precompiles.clone());
-            })
-            .build()
+        header: &<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::BlockHeader,
+    ) -> reth_evm::env::EvmEnv<<<<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::EvmFactory as reth_evm::evm::EvmFactory>::Spec> {
+        self.inner.evm_env(header)
+    }
+
+    fn next_evm_env(
+        &self,
+        parent: &<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::BlockHeader,
+        attributes: &<Self as ConfigureEvm>::NextBlockEnvCtx,
+    ) -> Result<reth_evm::env::EvmEnv<<<<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::EvmFactory as reth_evm::evm::EvmFactory>::Spec>, <Self as ConfigureEvm>::Error> {
+        self.inner.next_evm_env(parent, attributes)
+    }
+
+    fn context_for_block<'a>(
+        &self,
+        block: &'a reth_primitives::SealedBlock<<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::Block>,
+    ) -> <<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::ExecutionCtx<'a> {
+        self.inner.context_for_block(block)
+    }
+
+    fn context_for_next_block(
+        &self,
+        parent: &reth_primitives::SealedHeader<<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::BlockHeader>,
+        attributes: <Self as ConfigureEvm>::NextBlockEnvCtx,
+    ) -> <<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::ExecutionCtx<'_> {
+        self.inner.context_for_next_block(parent, attributes)
     }
 }
 
-impl ConfigureEvmEnv for MonmouthEvmConfig {
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
-        tx_env.caller = sender;
-        tx_env.gas_limit = transaction.gas_limit();
-        tx_env.gas_price = U256::from(transaction.max_fee_per_gas());
-        tx_env.gas_priority_fee = transaction.max_priority_fee_per_gas().map(U256::from);
-        tx_env.transact_to = transaction.to().into();
-        tx_env.value = transaction.value();
-        tx_env.data = transaction.input().clone();
-        tx_env.chain_id = Some(self.chain_spec.chain.id());
-        tx_env.nonce = Some(transaction.nonce());
-        tx_env.access_list = transaction.access_list().cloned().map(Into::into).unwrap_or_default();
-        tx_env.blob_hashes = transaction.blob_hashes().to_vec();
-        tx_env.max_fee_per_blob_gas = transaction.max_fee_per_blob_gas().map(Into::into);
+// Delegate ConfigureEngineEvm implementation to the inner EthEvmConfig
+impl<ExecutionData> ConfigureEngineEvm<ExecutionData> for MonmouthEvmConfig
+where
+    EthEvmConfig: ConfigureEngineEvm<ExecutionData>,
+{
+    fn evm_env_for_payload(&self, payload: &ExecutionData) -> EvmEnvFor<Self> {
+        self.inner.evm_env_for_payload(payload)
     }
 
-    fn fill_cfg_env(
-        &self,
-        cfg_env: &mut CfgEnvWithHandlerCfg,
-        header: &Header,
-        total_difficulty: U256,
-    ) {
-        cfg_env.chain_id = self.chain_spec.chain.id();
-        cfg_env.perf_analyse_created_bytecodes = AnalysisKind::default();
-        cfg_env.limit_contract_code_size = Some(0x6000);
-        cfg_env.memory_limit = 2_usize.pow(32) - 1;
-        cfg_env.disable_balance_check = false;
-        cfg_env.disable_block_gas_limit = false;
-        cfg_env.disable_eip3607 = false;
-        cfg_env.disable_gas_refund = false;
-        cfg_env.disable_base_fee = false;
-        cfg_env.disable_beneficiary_reward = false;
+    fn context_for_payload<'a>(&self, payload: &'a ExecutionData) -> ExecutionCtxFor<'a, Self> {
+        self.inner.context_for_payload(payload)
     }
 
-    fn fill_block_env(&self, block_env: &mut BlockEnv, header: &Header, after_merge: bool) {
-        block_env.number = U256::from(header.number);
-        block_env.coinbase = header.beneficiary;
-        block_env.timestamp = U256::from(header.timestamp);
-        block_env.gas_limit = U256::from(header.gas_limit);
-        block_env.basefee = U256::from(header.base_fee_per_gas.unwrap_or(1_000_000_000));
-        block_env.difficulty = U256::ZERO;
-        block_env.prevrandao = Some(header.mix_hash);
-        block_env.blob_excess_gas_and_price = header.excess_blob_gas.map(|excess| {
-            BlobExcessGasAndPrice::new(excess)
-        });
+    fn tx_iterator_for_payload(&self, payload: &ExecutionData) -> impl ExecutableTxIterator<Self> {
+        self.inner.tx_iterator_for_payload(payload)
     }
 }

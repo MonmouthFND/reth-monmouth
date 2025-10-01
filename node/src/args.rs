@@ -4,7 +4,7 @@ use monmouth_engine::SequencerConfig;
 use monmouth_exex_host::ExExHostConfig;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Parser, Serialize, Deserialize)]
+#[derive(Debug, Clone, Parser, Serialize, Deserialize, Default)]
 pub struct MonmouthNodeArgs {
     #[arg(long, help = "Enable agent-aware transaction pool")]
     pub enable_agent_pool: bool,
