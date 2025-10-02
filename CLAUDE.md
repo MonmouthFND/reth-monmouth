@@ -181,6 +181,45 @@ Cli::<EthereumChainSpecParser, MonmouthNodeArgs>::parse()
 - All Reth standard flags remain available
 - Custom args appear in `--help` output automatically
 
+### EVM Customization
+
+Monmouth extends the EVM with custom precompiles for AI/ML operations and cross-chain execution.
+
+**Architecture Pattern:**
+- Delegation wrapper around `EthEvmConfig`
+- Custom precompiles registered in `MonmouthPrecompileSet`
+- Zero performance overhead through inline delegation
+- Maintains full Ethereum compatibility
+
+**Custom Precompiles:**
+
+| Address | Name | Purpose | Status |
+|---------|------|---------|--------|
+| 0x1000 | AI Inference | ML model execution on-chain | 🚧 Stub |
+| 0x1001 | Vector Similarity | Semantic search & RAG operations | 🚧 Stub |
+| 0x1002 | Intent Parser | Natural language → transaction plans | 🚧 Stub |
+| 0x1003 | SVM Router | Solana VM program execution | 🚧 Stub |
+| 0x4200 | L2 Message Passer | L1 ↔ L2 cross-layer messaging | 🚧 Stub |
+
+**Implementation Locations:**
+- `evm/src/factory.rs` - `MonmouthEvmConfig` wrapper
+- `evm/src/precompiles.rs` - Precompile implementations
+- `primitives/src/precompiles.rs` - Addresses & data structures
+- `node/src/node.rs` - `MonmouthExecutorBuilder` integration
+
+**Implementation Status:**
+- Precompile infrastructure exists with stub implementations
+- Gas models defined for each precompile
+- Type system for inputs/outputs in place
+- Real ML/AI logic not yet implemented (returns mock data)
+
+**Quick Reference - Adding a Precompile:**
+1. Define address in `primitives/src/precompiles.rs`
+2. Add input/output types in same file
+3. Implement `run(input, gas_limit)` method in `evm/src/precompiles.rs`
+4. Register in `MonmouthPrecompileSet::new()`
+5. Test via `eth_call` RPC to the precompile address
+
 ### Critical Dependencies
 
 - **Reth 1.8.1**: Base node implementation (pinned version)

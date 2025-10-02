@@ -39,7 +39,7 @@ impl HeuristicClassifier {
             
             "a694fc3a" | "2e1a7d4d" | "379607f5" => IntentClassification::Staking,
             
-            "42842e0e" | "b88d4fde" | "23b872dd" if self.is_nft_contract(tx.to()) => {
+            "42842e0e" | "b88d4fde" if self.is_nft_contract(tx.to()) => {
                 IntentClassification::NftOperation
             }
             
