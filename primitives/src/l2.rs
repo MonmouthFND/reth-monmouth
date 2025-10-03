@@ -33,6 +33,7 @@ pub struct SequencerBatch {
     pub transactions: Vec<EthereumTxEnvelope<TxEip4844>>,
     pub state_root: B256,
     pub sequencer_address: Address,
+    pub withdrawals: Vec<WithdrawalRequest>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

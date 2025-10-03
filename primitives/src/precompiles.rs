@@ -72,3 +72,35 @@ pub struct SvmAccount {
     pub is_signer: bool,
     pub is_writable: bool,
 }
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum L2MessageType {
+    Deposit,        // L1 → L2: User deposits funds
+    Withdrawal,     // L2 → L1: User initiates withdrawal
+    StateRoot,      // L2 → L1: Sequencer submits state proof
+    CrossLayerCall, // Contract-to-contract message
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct L2Message {
+    pub msg_type: L2MessageType,
+    pub sender: Address,
+    pub recipient: Address,
+    pub value: U256,
+    pub data: Bytes,
+    pub nonce: u64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct L2MessageInput {
+    pub message: L2Message,
+    pub signature: Option<Bytes>, // Optional signature for validation
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct L2MessageOutput {
+    pub success: bool,
+    pub message_hash: Bytes,
+    pub error: Option<String>,
+}

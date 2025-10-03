@@ -58,6 +58,7 @@ impl BatchBuilder {
             transactions,
             state_root,
             sequencer_address: Default::default(),
+            withdrawals: Vec::new(), // Will be populated by sequencer
         };
 
         self.current_batch_index += 1;

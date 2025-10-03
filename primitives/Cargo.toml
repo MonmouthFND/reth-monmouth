@@ -27,3 +27,4 @@ bytes.workspace = true
 # Utils
 thiserror.workspace = true
 hex.workspace = true
+parking_lot.workspace = true

@@ -1,10 +1,12 @@
 pub mod agent;
 pub mod l2;
 pub mod precompiles;
+pub mod message_queue;
 
 pub use agent::*;
 pub use l2::*;
 pub use precompiles::*;
+pub use message_queue::*;
 
 use alloy_primitives::{Address, U256};
 

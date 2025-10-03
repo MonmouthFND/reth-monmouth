@@ -2,6 +2,7 @@ use crate::batch_builder::BatchBuilder;
 use crate::config::SequencerConfig;
 use alloy_primitives::B256;
 use alloy_consensus::Transaction;
+use monmouth_primitives::{MessageQueue, WithdrawalRequest};
 use parking_lot::RwLock;
 use reth_primitives::TransactionSigned;
 use std::sync::Arc;
@@ -14,6 +15,7 @@ pub struct L2Sequencer {
     batch_builder: BatchBuilder,
     current_l1_block: Arc<RwLock<(u64, B256)>>,
     pending_transactions: Arc<RwLock<Vec<TransactionSigned>>>,
+    message_queue: MessageQueue,
     block_producer_handle: Option<tokio::task::JoinHandle<()>>,
     batch_submitter_handle: Option<tokio::task::JoinHandle<()>>,
     shutdown_tx: Option<mpsc::Sender<()>>,
@@ -26,6 +28,7 @@ impl L2Sequencer {
             batch_builder: BatchBuilder::new(config.max_batch_size, config.enable_compression),
             current_l1_block: Arc::new(RwLock::new((0, B256::ZERO))),
             pending_transactions: Arc::new(RwLock::new(Vec::new())),
+            message_queue: MessageQueue::new(),
             block_producer_handle: None,
             batch_submitter_handle: None,
             shutdown_tx: None,
@@ -62,14 +65,15 @@ impl L2Sequencer {
 
         let (shutdown_tx2, mut shutdown_rx2) = mpsc::channel(1);
         let config2 = self.config.clone();
+        let message_queue = self.message_queue.clone();
 
         let batch_submitter = tokio::spawn(async move {
             let mut interval = interval(config2.batch_submission_frequency);
-            
+
             loop {
                 tokio::select! {
                     _ = interval.tick() => {
-                        Self::submit_batch(&config2).await;
+                        Self::submit_batch(&config2, &message_queue).await;
                     }
                     _ = shutdown_rx2.recv() => {
                         info!("Batch submitter shutting down");
@@ -124,8 +128,43 @@ impl L2Sequencer {
         }
     }
 
-    async fn submit_batch(_config: &SequencerConfig) {
+    async fn submit_batch(config: &SequencerConfig, message_queue: &MessageQueue) {
         debug!("Submitting batch to L1");
+
+        // Collect pending withdrawal messages
+        let mut withdrawals = Vec::new();
+        let withdrawal_count = message_queue.withdrawal_count();
+
+        if withdrawal_count > 0 {
+            info!("Processing {} pending withdrawals for batch submission", withdrawal_count);
+
+            // Dequeue all pending withdrawals
+            while let Some(l2_message) = message_queue.dequeue_withdrawal() {
+                let withdrawal = WithdrawalRequest {
+                    nonce: l2_message.nonce,
+                    sender: l2_message.sender,
+                    target: l2_message.recipient,
+                    value: l2_message.value,
+                    gas_limit: 100_000, // Default gas limit, could be derived from message.data
+                    data: l2_message.data.clone(),
+                    l2_block_number: 0, // Would need current block number from state
+                    message_hash: B256::ZERO, // Would compute from message
+                };
+                withdrawals.push(withdrawal);
+            }
+
+            info!("Included {} withdrawals in batch submission", withdrawals.len());
+        }
+
+        // TODO: Actually submit batch to L1 with withdrawals
+        // For now just log that we would submit
+        if !withdrawals.is_empty() {
+            debug!(
+                "Would submit batch with {} withdrawals to L1 at {}",
+                withdrawals.len(),
+                config.l1_rpc_url
+            );
+        }
     }
 
     pub async fn add_transaction(&self, tx: TransactionSigned) {
