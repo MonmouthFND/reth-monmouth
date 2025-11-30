@@ -18,6 +18,12 @@ pub struct MonmouthPrecompileSet {
     precompiles: HashMap<Address, Precompile>,
 }
 
+impl Default for MonmouthPrecompileSet {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MonmouthPrecompileSet {
     pub fn new() -> Self {
         let mut precompiles = HashMap::new();

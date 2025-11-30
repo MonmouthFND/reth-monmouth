@@ -7,6 +7,7 @@ use parking_lot::RwLock;
 use reth_primitives::TransactionSigned;
 use reth_transaction_pool::TransactionPool;
 use std::{collections::HashMap, sync::Arc, time::Instant};
+use tokio::sync::Mutex as AsyncMutex;
 use tracing::{debug, error, info, warn};
 
 use crate::classifier::TransactionClassifier;
@@ -16,7 +17,7 @@ pub struct AgentAwarePool<P> {
     inner: P,
     config: AgentPoolConfig,
     classifier: Arc<dyn TransactionClassifier>,
-    exex_client: Option<ExExClient>,
+    exex_client: Option<Arc<AsyncMutex<ExExClient>>>,
     classified_txs: Arc<RwLock<HashMap<B256, ClassificationResult>>>,
     execution_plans: Arc<RwLock<HashMap<B256, ExecutionPlan>>>,
     contexts: Arc<RwLock<HashMap<B256, Vec<TransactionContext>>>>,
@@ -33,7 +34,43 @@ where
     ) -> Self {
         let exex_client = if !config.exex_endpoint.is_empty() {
             match ExExClient::new(&config.exex_endpoint) {
-                Ok(client) => Some(client),
+                Ok(client) => {
+                    info!("ExEx client configured for endpoint: {}", config.exex_endpoint);
+                    Some(Arc::new(AsyncMutex::new(client)))
+                }
+                Err(e) => {
+                    warn!("Failed to create ExEx client: {}", e);
+                    None
+                }
+            }
+        } else {
+            debug!("No ExEx endpoint configured, using local classifier only");
+            None
+        };
+
+        Self {
+            inner,
+            config,
+            classifier,
+            exex_client,
+            classified_txs: Arc::new(RwLock::new(HashMap::new())),
+            execution_plans: Arc::new(RwLock::new(HashMap::new())),
+            contexts: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    /// Create with an async-connected ExEx client
+    pub async fn with_connected_client(
+        inner: P,
+        config: AgentPoolConfig,
+        classifier: Arc<dyn TransactionClassifier>,
+    ) -> Self {
+        let exex_client = if !config.exex_endpoint.is_empty() {
+            match ExExClient::connect(&config.exex_endpoint).await {
+                Ok(client) => {
+                    info!("Connected to ExEx service at {}", config.exex_endpoint);
+                    Some(Arc::new(AsyncMutex::new(client)))
+                }
                 Err(e) => {
                     warn!("Failed to connect to ExEx service: {}", e);
                     None
@@ -54,14 +91,17 @@ where
         }
     }
 
-    async fn classify_transaction(&self, tx: &TransactionSigned) -> ClassificationResult {
+    pub async fn classify_transaction(&self, tx: &TransactionSigned) -> ClassificationResult {
         let start = Instant::now();
         let tx_hash = tx.hash();
 
         if let Some(exex) = &self.exex_client {
             match tokio::time::timeout(
                 self.config.max_classification_time,
-                exex.classify_transaction(tx.clone()),
+                async {
+                    let mut client = exex.lock().await;
+                    client.classify_transaction(tx.clone()).await
+                },
             )
             .await
             {
@@ -88,12 +128,17 @@ where
             }
         }
 
+        // Fallback to local heuristic classifier
         let fallback_result = self.classifier.classify(tx).await;
+        debug!(
+            "Using fallback classifier for {}: {:?}",
+            tx_hash, fallback_result.tx_type
+        );
         self.classified_txs.write().insert(*tx_hash, fallback_result.clone());
         fallback_result
     }
 
-    async fn fetch_context(&self, tx: &TransactionSigned) -> Vec<TransactionContext> {
+    pub async fn fetch_context(&self, tx: &TransactionSigned) -> Vec<TransactionContext> {
         if !self.config.enable_context_fetching {
             return Vec::new();
         }
@@ -101,7 +146,10 @@ where
         let tx_hash = tx.hash();
 
         if let Some(exex) = &self.exex_client {
-            match exex.fetch_context(tx.clone()).await {
+            let res = {
+                let mut client = exex.lock().await;
+                client.fetch_context(tx.clone()).await
+            }; match res {
                 Ok(contexts) => {
                     debug!("Fetched {} contexts for transaction {}", contexts.len(), tx_hash);
                     self.contexts.write().insert(*tx_hash, contexts.clone());
@@ -116,7 +164,7 @@ where
         Vec::new()
     }
 
-    async fn create_execution_plan(
+    pub async fn create_execution_plan(
         &self,
         tx: &TransactionSigned,
         classification: &ClassificationResult,
@@ -131,7 +179,10 @@ where
         let tx_hash = tx.hash();
 
         if let Some(exex) = &self.exex_client {
-            match exex.create_execution_plan(tx.clone(), classification.clone()).await {
+            let res = {
+                let mut client = exex.lock().await;
+                client.create_execution_plan(tx.clone(), classification.clone()).await
+            }; match res {
                 Ok(plan) => {
                     info!(
                         "Created execution plan for {} with {} steps",
@@ -150,6 +201,21 @@ where
         None
     }
 
+    pub async fn health_check(&self) -> bool {
+        if let Some(exex) = &self.exex_client {
+            let res = {
+                let mut client = exex.lock().await;
+                client.health_check().await
+            }; match res {
+                Ok(healthy) => return healthy,
+                Err(e) => {
+                    warn!("ExEx health check failed: {}", e);
+                }
+            }
+        }
+        false
+    }
+
     pub fn get_classification(&self, tx_hash: &B256) -> Option<ClassificationResult> {
         self.classified_txs.read().get(tx_hash).cloned()
     }
@@ -160,6 +226,14 @@ where
 
     pub fn get_context(&self, tx_hash: &B256) -> Vec<TransactionContext> {
         self.contexts.read().get(tx_hash).cloned().unwrap_or_default()
+    }
+
+    pub fn inner(&self) -> &P {
+        &self.inner
+    }
+
+    pub fn config(&self) -> &AgentPoolConfig {
+        &self.config
     }
 }
 
@@ -186,11 +260,30 @@ impl AgentPoolBuilder {
         self
     }
 
+    pub fn with_exex_endpoint(mut self, endpoint: String) -> Self {
+        self.config.exex_endpoint = endpoint;
+        self
+    }
+
     pub fn build<P: TransactionPool>(self, inner: P) -> AgentAwarePool<P> {
         let classifier = self.classifier.unwrap_or_else(|| {
             Arc::new(crate::classifier::HeuristicClassifier::new())
         });
 
         AgentAwarePool::new(inner, self.config, classifier)
+    }
+
+    pub async fn build_connected<P: TransactionPool>(self, inner: P) -> AgentAwarePool<P> {
+        let classifier = self.classifier.unwrap_or_else(|| {
+            Arc::new(crate::classifier::HeuristicClassifier::new())
+        });
+
+        AgentAwarePool::with_connected_client(inner, self.config, classifier).await
+    }
+}
+
+impl Default for AgentPoolBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }

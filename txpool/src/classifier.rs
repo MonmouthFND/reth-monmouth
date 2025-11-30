@@ -14,6 +14,12 @@ pub trait TransactionClassifier: Send + Sync {
 
 pub struct HeuristicClassifier;
 
+impl Default for HeuristicClassifier {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HeuristicClassifier {
     pub fn new() -> Self {
         Self

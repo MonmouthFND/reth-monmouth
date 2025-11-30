@@ -7,6 +7,7 @@ members = [
     "engine",
     "exex-host",
     "primitives",
+    "tests",
 ]
 resolver = "2"
 

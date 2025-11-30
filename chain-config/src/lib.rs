@@ -33,23 +33,25 @@ pub fn build_genesis() -> Genesis {
 
     add_system_accounts(&mut accounts);
 
-    let mut chain_config = ChainConfig::default();
-    chain_config.chain_id = MONMOUTH_CHAIN_ID;
-    chain_config.homestead_block = Some(0);
-    chain_config.eip150_block = Some(0);
-    chain_config.eip155_block = Some(0);
-    chain_config.eip158_block = Some(0);
-    chain_config.byzantium_block = Some(0);
-    chain_config.constantinople_block = Some(0);
-    chain_config.petersburg_block = Some(0);
-    chain_config.istanbul_block = Some(0);
-    chain_config.berlin_block = Some(0);
-    chain_config.london_block = Some(0);
-    chain_config.merge_netsplit_block = Some(0);
-    chain_config.shanghai_time = Some(0);
-    chain_config.cancun_time = Some(0);
-    chain_config.prague_time = Some(0);
-    chain_config.terminal_total_difficulty_passed = true;
+    let chain_config = ChainConfig {
+        chain_id: MONMOUTH_CHAIN_ID,
+        homestead_block: Some(0),
+        eip150_block: Some(0),
+        eip155_block: Some(0),
+        eip158_block: Some(0),
+        byzantium_block: Some(0),
+        constantinople_block: Some(0),
+        petersburg_block: Some(0),
+        istanbul_block: Some(0),
+        berlin_block: Some(0),
+        london_block: Some(0),
+        merge_netsplit_block: Some(0),
+        shanghai_time: Some(0),
+        cancun_time: Some(0),
+        prague_time: Some(0),
+        terminal_total_difficulty_passed: true,
+        ..Default::default()
+    };
 
     Genesis {
         config: chain_config,

@@ -12,6 +12,7 @@ use tracing::{debug, info};
 
 pub struct L2Sequencer {
     config: SequencerConfig,
+    #[allow(dead_code)] // Will be used when L1 batch submission is implemented
     batch_builder: BatchBuilder,
     current_l1_block: Arc<RwLock<(u64, B256)>>,
     pending_transactions: Arc<RwLock<Vec<TransactionSigned>>>,

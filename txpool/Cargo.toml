@@ -10,6 +10,7 @@ repository.workspace = true
 [dependencies]
 # Internal
 monmouth-primitives.workspace = true
+monmouth-exex-host.workspace = true
 
 # Reth
 reth-primitives.workspace = true
@@ -37,5 +38,3 @@ thiserror.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 
-[build-dependencies]
-tonic-build.workspace = true

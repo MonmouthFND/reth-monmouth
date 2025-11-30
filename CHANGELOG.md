@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Message queue integration with L2 sequencer for withdrawal processing
 - `MessageQueue` module in primitives crate for L2 message storage
 - L2 message types: `L2Message`, `L2MessageInput`, `L2MessageOutput`, `L2MessageType`
+- `.env.example` file documenting all environment variables and configuration options
 
 ### Changed
 - Upgraded from Reth v1.0.6 to v1.8.1

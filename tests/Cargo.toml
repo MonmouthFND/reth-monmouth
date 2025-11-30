@@ -1,0 +1,49 @@
+[package]
+name = "monmouth-integration-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+# Internal
+monmouth-primitives.workspace = true
+monmouth-chain-config.workspace = true
+monmouth-txpool.workspace = true
+monmouth-exex-host.workspace = true
+
+# Reth testing
+reth-e2e-test-utils.workspace = true
+reth-primitives.workspace = true
+reth-provider.workspace = true
+reth-chainspec.workspace = true
+
+# Alloy
+alloy-primitives.workspace = true
+alloy-provider.workspace = true
+alloy-rpc-types.workspace = true
+alloy-rpc-client.workspace = true
+
+# Async
+tokio = { workspace = true, features = ["full", "macros", "rt-multi-thread"] }
+futures.workspace = true
+
+# gRPC
+tonic.workspace = true
+
+# HTTP client for RPC testing
+reqwest = { workspace = true, features = ["json"] }
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Utils
+eyre.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+# Test framework
+tokio-test = "0.4"
