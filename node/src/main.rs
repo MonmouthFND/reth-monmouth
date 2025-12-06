@@ -1,4 +1,5 @@
 use clap::Parser;
+use monmouth_engine::spawn_engine_driver;
 use monmouth_exex_host::ExExHost;
 use monmouth_node::args::MonmouthNodeArgs;
 use monmouth_node::MonmouthNode;
@@ -53,9 +54,13 @@ fn main() {
             if args.sequencer {
                 let seq_config = args.sequencer_config();
                 info!(target: "monmouth", "Sequencer mode enabled:");
-                info!(target: "monmouth", "  - L1 RPC URL: {}",
-                    if seq_config.l1_rpc_url.is_empty() { "not configured" }
-                    else { &seq_config.l1_rpc_url });
+                if let Some(l1_config) = &seq_config.l1_client_config {
+                    info!(target: "monmouth", "  - L1 RPC URL: {}", l1_config.l1_rpc_url);
+                    info!(target: "monmouth", "  - L1 SequencerInbox: {:?}", l1_config.sequencer_inbox);
+                    info!(target: "monmouth", "  - L1 Bridge: {:?}", l1_config.bridge);
+                } else {
+                    info!(target: "monmouth", "  - L1 integration: not configured");
+                }
                 info!(target: "monmouth", "  - Block time: {:?}", seq_config.block_time);
                 info!(target: "monmouth", "  - Batch submission frequency: {:?}", seq_config.batch_submission_frequency);
             }
@@ -63,6 +68,27 @@ fn main() {
             // Launch the node
             let NodeHandle { node: _, node_exit_future } =
                 builder.node(MonmouthNode::default()).launch().await?;
+
+            // Start engine driver if sequencer mode is enabled
+            let _engine_driver = if args.sequencer {
+                let engine_config = args.engine_driver_config();
+                info!(
+                    target: "monmouth",
+                    "Starting engine driver for block production ({}s block time)",
+                    engine_config.block_time.as_secs()
+                );
+                info!(
+                    target: "monmouth",
+                    "Engine API: {}, JWT: {}",
+                    engine_config.engine_url,
+                    engine_config.jwt_secret_path
+                );
+
+                let (handle, task) = spawn_engine_driver(engine_config);
+                Some((handle, task))
+            } else {
+                None
+            };
 
             node_exit_future.await
         })
