@@ -6,7 +6,8 @@
 //! - Monitoring L1StandardBridge for deposits
 
 use alloy_network::EthereumWallet;
-use alloy_primitives::{Address, Bytes, B256};
+use alloy_primitives::{Address, Bytes, B256, keccak256};
+use alloy_sol_types::SolValue;
 use alloy_provider::{Provider, ProviderBuilder};
 use alloy_signer_local::PrivateKeySigner;
 use alloy_sol_types::sol;
@@ -145,6 +146,7 @@ impl L1Client {
     }
 
     /// Submit a batch to the L1 SequencerInbox contract
+    /// Returns the computed batch hash (for use as parent_batch_hash in next batch)
     pub async fn submit_batch(&self, batch: &SequencerBatch) -> Result<B256, L1ClientError> {
         info!(
             "Submitting batch {} to L1 SequencerInbox",
@@ -161,7 +163,7 @@ impl L1Client {
 
         // Compute merkle roots
         let withdrawals_root = self.compute_withdrawals_root(&batch.withdrawals);
-        let transactions_root = alloy_primitives::keccak256(&tx_data);
+        let transactions_root = keccak256(&tx_data);
 
         // Build batch header
         let header = ISequencerInbox::BatchHeader {
@@ -175,12 +177,18 @@ impl L1Client {
             transactionsRoot: transactions_root,
         };
 
+        // Compute batch hash locally (same as contract: keccak256(abi.encode(header, keccak256(transactions))))
+        let tx_data_hash = keccak256(&tx_data);
+        let encoded = (header.clone(), tx_data_hash).abi_encode();
+        let batch_hash = keccak256(&encoded);
+
         debug!(
-            "Batch header: index={}, state_root={:?}, {} txs, {} withdrawals",
+            "Batch header: index={}, state_root={:?}, {} txs, {} withdrawals, batch_hash={:?}",
             batch.batch_index,
             batch.state_root,
             batch.transactions.len(),
-            batch.withdrawals.len()
+            batch.withdrawals.len(),
+            batch_hash
         );
 
         // Submit batch transaction
@@ -200,11 +208,12 @@ impl L1Client {
 
         let tx_hash = receipt.transaction_hash;
         info!(
-            "Batch {} submitted successfully! L1 tx: {:?}",
-            batch.batch_index, tx_hash
+            "Batch {} submitted successfully! L1 tx: {:?}, batch_hash: {:?}",
+            batch.batch_index, tx_hash, batch_hash
         );
 
-        Ok(tx_hash)
+        // Return the computed batch hash (not tx hash) for chaining
+        Ok(batch_hash)
     }
 
     /// Commit a state root to the StateCommitmentChain
@@ -256,6 +265,22 @@ impl L1Client {
             })?;
 
         Ok(batch_index)
+    }
+
+    /// Get the batch hash for a specific batch index
+    pub async fn get_batch_hash(&self, batch_index: u64) -> Result<B256, L1ClientError> {
+        let provider = self.get_provider();
+        let contract = ISequencerInbox::new(self.sequencer_inbox, provider);
+
+        let batch_hash = contract
+            .batchHashes(batch_index)
+            .call()
+            .await
+            .map_err(|e| {
+                L1ClientError::Contract(format!("Failed to get batch hash for index {}: {}", batch_index, e))
+            })?;
+
+        Ok(batch_hash)
     }
 
     /// Get the latest committed batch from StateCommitmentChain

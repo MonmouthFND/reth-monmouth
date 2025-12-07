@@ -153,10 +153,42 @@ impl EngineDriver {
             self.config.block_time.as_secs()
         );
 
-        let mut block_interval = interval(self.config.block_time);
+        // Wait for auth RPC to be available with exponential backoff
+        let mut attempt = 0;
+        let max_attempts = 30;
+        let mut delay = Duration::from_millis(500);
 
-        // Initial delay to let the node fully start
-        tokio::time::sleep(Duration::from_secs(3)).await;
+        info!(target: "monmouth::engine", "Waiting for Engine API to become available...");
+
+        loop {
+            attempt += 1;
+
+            // Try to make a simple call to check if RPC is ready
+            match self.check_engine_ready().await {
+                Ok(()) => {
+                    info!(target: "monmouth::engine", "Engine API is ready, starting block production");
+                    break;
+                }
+                Err(e) if attempt >= max_attempts => {
+                    error!(target: "monmouth::engine", "Engine API not available after {} attempts: {}", attempt, e);
+                    return Err(e);
+                }
+                Err(e) => {
+                    debug!(target: "monmouth::engine", "Attempt {}/{}: Engine API not ready: {}", attempt, max_attempts, e);
+                    tokio::time::sleep(delay).await;
+                    // Exponential backoff capped at 5 seconds
+                    delay = std::cmp::min(delay * 2, Duration::from_secs(5));
+                }
+            }
+        }
+
+        // Bootstrap: Do initial forkchoice update to trigger RPC binding
+        info!(target: "monmouth::engine", "Sending initial forkchoice update to bootstrap consensus...");
+        if let Err(e) = self.bootstrap_forkchoice().await {
+            warn!(target: "monmouth::engine", "Bootstrap forkchoice failed (may be normal on fresh chain): {}", e);
+        }
+
+        let mut block_interval = interval(self.config.block_time);
 
         loop {
             tokio::select! {
@@ -189,6 +221,37 @@ impl EngineDriver {
                 }
             }
         }
+
+        Ok(())
+    }
+
+    /// Check if Engine API is ready by making a simple call
+    async fn check_engine_ready(&self) -> Result<(), EngineDriverError> {
+        // Try getting exchange capabilities - a lightweight call
+        let _: Vec<String> = self
+            .client
+            .request("engine_exchangeCapabilities", rpc_params![vec!["engine_forkchoiceUpdatedV3", "engine_getPayloadV3", "engine_newPayloadV3"]])
+            .await
+            .map_err(|e| EngineDriverError::Rpc(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Bootstrap forkchoice to trigger consensus readiness
+    async fn bootstrap_forkchoice(&mut self) -> Result<(), EngineDriverError> {
+        let fcu_state = ForkchoiceState {
+            head_block_hash: self.head_hash,
+            safe_block_hash: self.head_hash,
+            finalized_block_hash: self.head_hash,
+        };
+
+        let _: ForkchoiceUpdated = self
+            .client
+            .request(
+                "engine_forkchoiceUpdatedV3",
+                rpc_params![fcu_state, Option::<PayloadAttributes>::None],
+            )
+            .await
+            .map_err(|e| EngineDriverError::Rpc(e.to_string()))?;
 
         Ok(())
     }

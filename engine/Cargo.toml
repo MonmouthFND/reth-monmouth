@@ -7,6 +7,10 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "engine-driver"
+path = "src/bin/engine_driver.rs"
+
 [dependencies]
 # Internal
 monmouth-primitives.workspace = true
@@ -48,6 +52,7 @@ async-trait.workspace = true
 
 # Utils
 tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 parking_lot.workspace = true
 thiserror.workspace = true
 serde.workspace = true

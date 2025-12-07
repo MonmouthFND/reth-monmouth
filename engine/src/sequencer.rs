@@ -56,12 +56,25 @@ impl L2Sequencer {
     pub async fn start(&mut self) -> Result<SequencerHandle, Box<dyn std::error::Error>> {
         info!("Starting L2 sequencer");
 
-        // If L1 client is configured, sync batch index from L1
+        // If L1 client is configured, sync batch index and parent batch hash from L1
         if let Some(l1_client) = &self.l1_client {
             match l1_client.get_latest_batch_index().await {
                 Ok(index) => {
                     *self.batch_index.write() = index;
                     info!("Synced batch index from L1: {}", index);
+
+                    // If there are previous batches, get the last batch hash as parent
+                    if index > 0 {
+                        match l1_client.get_batch_hash(index - 1).await {
+                            Ok(hash) => {
+                                *self.parent_batch_hash.write() = hash;
+                                info!("Synced parent batch hash from L1: {:?}", hash);
+                            }
+                            Err(e) => {
+                                warn!("Failed to sync parent batch hash from L1: {}", e);
+                            }
+                        }
+                    }
                 }
                 Err(e) => {
                     warn!("Failed to sync batch index from L1: {}", e);
@@ -245,13 +258,14 @@ impl L2Sequencer {
         };
 
         // Get current batch info
+        // Note: current_index is synced from L1's latestBatchIndex which is the NEXT batch to submit
         let current_index = *batch_index.read();
         let parent_hash = *parent_batch_hash.read();
         let (epoch_num, epoch_hash) = *current_l1.read();
 
         // Build the batch
         let batch = SequencerBatch {
-            batch_index: current_index + 1,
+            batch_index: current_index,
             parent_batch_hash: parent_hash,
             epoch_num,
             epoch_hash,
@@ -267,16 +281,16 @@ impl L2Sequencer {
 
         // Submit batch to L1
         match client.submit_batch(&batch).await {
-            Ok(tx_hash) => {
+            Ok(batch_hash) => {
                 info!(
                     "Batch {} submitted successfully! L1 tx: {:?}",
-                    batch.batch_index, tx_hash
+                    batch.batch_index, batch_hash
                 );
 
-                // Update batch index and parent hash
-                *batch_index.write() = batch.batch_index;
-                // For now, use tx_hash as parent_batch_hash (simplified)
-                *parent_batch_hash.write() = tx_hash;
+                // Update batch index and parent hash for next batch
+                *batch_index.write() = batch.batch_index + 1;
+                // Use the computed batch_hash as parent_batch_hash for next batch
+                *parent_batch_hash.write() = batch_hash;
 
                 // Also commit state root
                 if let Err(e) = client.commit_state_root(batch.batch_index, batch.state_root).await {
@@ -306,14 +320,20 @@ impl L2Sequencer {
             return;
         }
 
+        // Limit to 10 blocks per query (Alchemy free tier limit)
+        const MAX_BLOCK_RANGE: u64 = 10;
+
         let from_block = if last_scanned == 0 {
-            // On first poll, only look at recent blocks
-            current_block.saturating_sub(100)
+            // On first poll, start from recent blocks (within limit)
+            current_block.saturating_sub(MAX_BLOCK_RANGE - 1)
         } else {
             last_scanned + 1
         };
 
-        match l1_client.poll_deposits(from_block, current_block).await {
+        // Cap to_block to respect max range
+        let to_block = std::cmp::min(current_block, from_block + MAX_BLOCK_RANGE - 1);
+
+        match l1_client.poll_deposits(from_block, to_block).await {
             Ok(deposits) => {
                 if !deposits.is_empty() {
                     info!(
