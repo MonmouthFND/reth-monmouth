@@ -1,24 +1,24 @@
-use reth_chainspec::Chain;
 use alloy_genesis::{ChainConfig, Genesis, GenesisAccount};
 use alloy_primitives::{address, b256, Address, B256, U256};
 use monmouth_primitives::{
-    MONMOUTH_CHAIN_ID, DEFAULT_L2_GAS_LIMIT, MIN_BASE_FEE_PER_GAS,
-    SEQUENCER_FEE_VAULT, L1_FEE_VAULT,
+    DEFAULT_L2_GAS_LIMIT, L1_FEE_VAULT, MIN_BASE_FEE_PER_GAS, MONMOUTH_CHAIN_ID,
+    SEQUENCER_FEE_VAULT,
 };
 use once_cell::sync::Lazy;
+use reth_chainspec::Chain;
 use reth_chainspec::{ChainSpec, ChainSpecBuilder};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-pub static MONMOUTH_GENESIS_HASH: B256 = b256!("0000000000000000000000000000000000000000000000000000000000000000");
+pub static MONMOUTH_GENESIS_HASH: B256 =
+    b256!("0000000000000000000000000000000000000000000000000000000000000000");
 
-pub static MONMOUTH_CHAIN_SPEC: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
-    Arc::new(build_monmouth_chain_spec())
-});
+pub static MONMOUTH_CHAIN_SPEC: Lazy<Arc<ChainSpec>> =
+    Lazy::new(|| Arc::new(build_monmouth_chain_spec()));
 
 pub fn build_monmouth_chain_spec() -> ChainSpec {
     let genesis = build_genesis();
-    
+
     ChainSpecBuilder::default()
         .chain(Chain::from_id(MONMOUTH_CHAIN_ID))
         .genesis(genesis)
@@ -33,23 +33,25 @@ pub fn build_genesis() -> Genesis {
 
     add_system_accounts(&mut accounts);
 
-    let mut chain_config = ChainConfig::default();
-    chain_config.chain_id = MONMOUTH_CHAIN_ID;
-    chain_config.homestead_block = Some(0);
-    chain_config.eip150_block = Some(0);
-    chain_config.eip155_block = Some(0);
-    chain_config.eip158_block = Some(0);
-    chain_config.byzantium_block = Some(0);
-    chain_config.constantinople_block = Some(0);
-    chain_config.petersburg_block = Some(0);
-    chain_config.istanbul_block = Some(0);
-    chain_config.berlin_block = Some(0);
-    chain_config.london_block = Some(0);
-    chain_config.merge_netsplit_block = Some(0);
-    chain_config.shanghai_time = Some(0);
-    chain_config.cancun_time = Some(0);
-    chain_config.prague_time = Some(0);
-    chain_config.terminal_total_difficulty_passed = true;
+    let chain_config = ChainConfig {
+        chain_id: MONMOUTH_CHAIN_ID,
+        homestead_block: Some(0),
+        eip150_block: Some(0),
+        eip155_block: Some(0),
+        eip158_block: Some(0),
+        byzantium_block: Some(0),
+        constantinople_block: Some(0),
+        petersburg_block: Some(0),
+        istanbul_block: Some(0),
+        berlin_block: Some(0),
+        london_block: Some(0),
+        merge_netsplit_block: Some(0),
+        shanghai_time: Some(0),
+        cancun_time: Some(0),
+        prague_time: Some(0),
+        terminal_total_difficulty_passed: true,
+        ..Default::default()
+    };
 
     Genesis {
         config: chain_config,
@@ -69,7 +71,7 @@ pub fn build_genesis() -> Genesis {
 
 fn add_funded_accounts(accounts: &mut BTreeMap<Address, GenesisAccount>) {
     const INITIAL_BALANCE: U256 = U256::from_limbs([0, 0, 0x021e19e0c9bab240, 0]); // 10_000 ETH
-    
+
     let funded_addresses = [
         address!("f39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
         address!("70997970C51812dc3A010C7d01b50e0d17dc79C8"),
@@ -82,7 +84,7 @@ fn add_funded_accounts(accounts: &mut BTreeMap<Address, GenesisAccount>) {
         address!("23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"),
         address!("a0Ee7A142d267C1f36714E4a8F75612F20a79720"),
     ];
-    
+
     for addr in funded_addresses {
         accounts.insert(
             addr,
@@ -108,7 +110,7 @@ fn add_system_accounts(accounts: &mut BTreeMap<Address, GenesisAccount>) {
             private_key: None,
         },
     );
-    
+
     accounts.insert(
         L1_FEE_VAULT,
         GenesisAccount {
@@ -134,21 +136,21 @@ pub fn export_genesis_json() -> Result<String, serde_json::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_chain_spec_creation() {
         let spec = build_monmouth_chain_spec();
         assert_eq!(spec.chain.id(), MONMOUTH_CHAIN_ID);
     }
-    
+
     #[test]
     fn test_genesis_accounts() {
         let genesis = build_genesis();
         assert!(genesis.alloc.len() > 10);
-        
+
         let test_addr = address!("f39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
         assert!(genesis.alloc.contains_key(&test_addr));
-        
+
         let account = genesis.alloc.get(&test_addr).unwrap();
         assert!(account.balance > U256::ZERO);
     }

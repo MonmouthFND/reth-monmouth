@@ -7,15 +7,13 @@ use reth_ethereum_engine_primitives::{
 use reth_ethereum_primitives::EthPrimitives;
 use reth_evm::eth::spec::EthExecutorSpec;
 use reth_node_builder::{
-    components::{
-        BasicPayloadServiceBuilder, ComponentsBuilder, ExecutorBuilder,
-    },
+    components::{BasicPayloadServiceBuilder, ComponentsBuilder, ExecutorBuilder},
     node::{FullNodeTypes, NodeTypes},
     BuilderContext, Node, NodeAdapter,
 };
 use reth_node_ethereum::{
-    EthereumAddOns, EthereumConsensusBuilder, EthereumEthApiBuilder, EthereumEngineValidatorBuilder,
-    EthereumNetworkBuilder, EthereumPayloadBuilder, EthereumPoolBuilder,
+    EthereumAddOns, EthereumConsensusBuilder, EthereumEngineValidatorBuilder,
+    EthereumEthApiBuilder, EthereumNetworkBuilder, EthereumPayloadBuilder, EthereumPoolBuilder,
 };
 use reth_payload_primitives::PayloadTypes;
 use reth_provider::EthStorage;
@@ -78,7 +76,8 @@ where
         EthereumConsensusBuilder,
     >;
 
-    type AddOns = EthereumAddOns<NodeAdapter<N>, EthereumEthApiBuilder, EthereumEngineValidatorBuilder>;
+    type AddOns =
+        EthereumAddOns<NodeAdapter<N>, EthereumEthApiBuilder, EthereumEngineValidatorBuilder>;
 
     fn components_builder(&self) -> Self::ComponentsBuilder {
         Self::components()

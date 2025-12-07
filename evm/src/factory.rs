@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use alloy_primitives::Address;
 use monmouth_chain_config::MONMOUTH_CHAIN_SPEC;
 use reth_chainspec::ChainSpec;
-use reth_evm::{ConfigureEngineEvm, EvmEnvFor, ExecutionCtxFor, ExecutableTxIterator};
+use reth_evm::{ConfigureEngineEvm, EvmEnvFor, ExecutableTxIterator, ExecutionCtxFor};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_node_api::ConfigureEvm;
 use revm_primitives::Precompile;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::precompiles::MonmouthPrecompileSet;
 
@@ -27,10 +27,7 @@ impl MonmouthEvmConfig {
         let precompile_set = MonmouthPrecompileSet::new();
         let precompiles = Arc::new(precompile_set.get_precompiles());
 
-        Self {
-            inner,
-            precompiles,
-        }
+        Self { inner, precompiles }
     }
 
     /// Create Monmouth config using the default chain spec
@@ -63,7 +60,7 @@ impl ConfigureEvm for MonmouthEvmConfig {
     fn evm_env(
         &self,
         header: &<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::BlockHeader,
-    ) -> reth_evm::env::EvmEnv<<<<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::EvmFactory as reth_evm::evm::EvmFactory>::Spec> {
+    ) -> reth_evm::env::EvmEnv<<<<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::EvmFactory as reth_evm::evm::EvmFactory>::Spec>{
         self.inner.evm_env(header)
     }
 
@@ -71,14 +68,14 @@ impl ConfigureEvm for MonmouthEvmConfig {
         &self,
         parent: &<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::BlockHeader,
         attributes: &<Self as ConfigureEvm>::NextBlockEnvCtx,
-    ) -> Result<reth_evm::env::EvmEnv<<<<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::EvmFactory as reth_evm::evm::EvmFactory>::Spec>, <Self as ConfigureEvm>::Error> {
+    ) -> Result<reth_evm::env::EvmEnv<<<<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::EvmFactory as reth_evm::evm::EvmFactory>::Spec>, <Self as ConfigureEvm>::Error>{
         self.inner.next_evm_env(parent, attributes)
     }
 
     fn context_for_block<'a>(
         &self,
         block: &'a reth_primitives::SealedBlock<<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::Block>,
-    ) -> <<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::ExecutionCtx<'a> {
+    ) -> <<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::ExecutionCtx<'a>{
         self.inner.context_for_block(block)
     }
 
@@ -86,7 +83,7 @@ impl ConfigureEvm for MonmouthEvmConfig {
         &self,
         parent: &reth_primitives::SealedHeader<<<Self as ConfigureEvm>::Primitives as reth_primitives_traits::NodePrimitives>::BlockHeader>,
         attributes: <Self as ConfigureEvm>::NextBlockEnvCtx,
-    ) -> <<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::ExecutionCtx<'_> {
+    ) -> <<Self as ConfigureEvm>::BlockExecutorFactory as reth_evm::block::BlockExecutorFactory>::ExecutionCtx<'_>{
         self.inner.context_for_next_block(parent, attributes)
     }
 }

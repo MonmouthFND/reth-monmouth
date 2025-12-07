@@ -7,6 +7,10 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "engine-driver"
+path = "src/bin/engine_driver.rs"
+
 [dependencies]
 # Internal
 monmouth-primitives.workspace = true
@@ -22,6 +26,24 @@ reth-consensus.workspace = true
 # Alloy
 alloy-primitives.workspace = true
 alloy-consensus.workspace = true
+alloy-provider.workspace = true
+alloy-signer.workspace = true
+alloy-signer-local.workspace = true
+alloy-network.workspace = true
+alloy-transport-http.workspace = true
+alloy-contract.workspace = true
+alloy-sol-types.workspace = true
+alloy-rpc-types.workspace = true
+alloy-rpc-types-engine.workspace = true
+
+# RPC Client
+jsonrpsee = { version = "0.24", features = ["http-client"] }
+
+# JWT Auth
+base64 = "0.22"
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
 
 # Async
 tokio.workspace = true
@@ -30,8 +52,11 @@ async-trait.workspace = true
 
 # Utils
 tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 parking_lot.workspace = true
 thiserror.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 bincode.workspace = true
+url.workspace = true
+reqwest.workspace = true

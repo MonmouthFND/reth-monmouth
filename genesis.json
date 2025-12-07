@@ -1,8 +1,22 @@
 {
   "config": {
-    "chainId": 1,
+    "chainId": 7750,
+    "homesteadBlock": 0,
     "daoForkSupport": false,
-    "terminalTotalDifficultyPassed": false
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "berlinBlock": 0,
+    "londonBlock": 0,
+    "mergeNetsplitBlock": 0,
+    "shanghaiTime": 0,
+    "cancunTime": 0,
+    "pragueTime": 0,
+    "terminalTotalDifficultyPassed": true
   },
   "nonce": "0x0",
   "timestamp": "0x0",

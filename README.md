@@ -266,19 +266,55 @@ curl http://localhost:50051/health
 4. **Network Security**: Use TLS for ExEx communication
 5. **Resource Limits**: Set appropriate gas and compute limits
 
-## L2 Bridge Implementation
+## L1 Integration (Sepolia Testnet)
 
-To complete the L2 setup, implement:
+Monmouth L2 is deployed to Sepolia testnet with a **Trusted Sequencer** security model.
 
-1. **L1 Contracts**
-   - Deposit contract for L1→L2 transfers
-   - State commitment chain for batch submission
-   - Withdrawal finalizer for L2→L1 transfers
+### L1 Contracts
 
-2. **Bridge Service**
-   - Monitor L1 deposit events
-   - Process withdrawal requests
-   - Submit state roots and batches
+| Contract | Purpose |
+|----------|---------|
+| SequencerInbox | Receives batch data from sequencer |
+| StateCommitmentChain | Stores L2 state roots for verification |
+| L1StandardBridge | Handles ETH deposits (L1→L2) and withdrawals (L2→L1) |
+| CrossDomainMessenger | Arbitrary L1↔L2 message passing |
+
+### L1 Configuration Options
+
+```bash
+monmouth node [OPTIONS]
+
+L1 OPTIONS:
+    --l1-rpc-url <URL>                    L1 RPC endpoint (env: L1_RPC_URL)
+    --sequencer-private-key <KEY>         Signing key for L1 txs (env: SEQUENCER_PRIVATE_KEY)
+    --l1-sequencer-inbox <ADDR>           SequencerInbox address (env: L1_SEQUENCER_INBOX)
+    --l1-state-commitment-chain <ADDR>    StateCommitmentChain address (env: L1_STATE_COMMITMENT_CHAIN)
+    --l1-bridge <ADDR>                    L1StandardBridge address (env: L1_BRIDGE_ADDRESS)
+    --l1-cross-domain-messenger <ADDR>    CrossDomainMessenger address (env: L1_CROSS_DOMAIN_MESSENGER)
+    --l1-deposit-poll-interval <SECS>     Deposit polling interval (default: 12)
+```
+
+### Running with L1 Integration
+
+```bash
+# Set environment variables (or use .env file)
+export L1_RPC_URL="https://sepolia.infura.io/v3/YOUR_KEY"
+export SEQUENCER_PRIVATE_KEY="0x..."
+export L1_SEQUENCER_INBOX="0x..."
+export L1_STATE_COMMITMENT_CHAIN="0x..."
+export L1_BRIDGE_ADDRESS="0x..."
+export L1_CROSS_DOMAIN_MESSENGER="0x..."
+
+# Start sequencer with L1 integration
+./scripts/start_sequencer.sh
+```
+
+### L1 Client Features
+
+- **Batch Submission**: Submits L2 blocks to SequencerInbox with chained batch hashes
+- **State Commitment**: Commits L2 state roots to StateCommitmentChain
+- **Deposit Monitoring**: Polls L1StandardBridge for ETHDepositInitiated events
+- **Withdrawal Processing**: Includes pending withdrawals in batch submissions
 
 ## Contributing
 

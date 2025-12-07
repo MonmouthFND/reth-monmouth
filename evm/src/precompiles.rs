@@ -1,11 +1,13 @@
 use alloy_primitives::Address;
 use monmouth_primitives::{
-    AI_INFERENCE_PRECOMPILE, INTENT_PARSER_PRECOMPILE, L2_MESSAGE_PASSER_PRECOMPILE,
-    SVM_ROUTER_PRECOMPILE, VECTOR_SIMILARITY_PRECOMPILE,
-    L2MessageInput, L2MessageOutput, MessageQueue,
+    L2MessageInput, L2MessageOutput, MessageQueue, AI_INFERENCE_PRECOMPILE,
+    INTENT_PARSER_PRECOMPILE, L2_MESSAGE_PASSER_PRECOMPILE, SVM_ROUTER_PRECOMPILE,
+    VECTOR_SIMILARITY_PRECOMPILE,
 };
 use once_cell::sync::Lazy;
-use revm_primitives::{Bytes as RevmBytes, Precompile, PrecompileOutput, PrecompileErrors, PrecompileResult};
+use revm_primitives::{
+    Bytes as RevmBytes, Precompile, PrecompileErrors, PrecompileOutput, PrecompileResult,
+};
 use std::collections::HashMap;
 use tracing::{debug, warn};
 
@@ -16,6 +18,12 @@ static MESSAGE_QUEUE: Lazy<MessageQueue> = Lazy::new(MessageQueue::new);
 #[derive(Clone)]
 pub struct MonmouthPrecompileSet {
     precompiles: HashMap<Address, Precompile>,
+}
+
+impl Default for MonmouthPrecompileSet {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MonmouthPrecompileSet {
@@ -67,7 +75,9 @@ impl AiInferencePrecompile {
         let gas_used = BASE_GAS + (input.len() as u64 * GAS_PER_BYTE);
 
         if gas_used > gas_limit {
-            return Err(PrecompileErrors::Error(revm_primitives::precompile::PrecompileError::OutOfGas));
+            return Err(PrecompileErrors::Error(
+                revm_primitives::precompile::PrecompileError::OutOfGas,
+            ));
         }
 
         let output = RevmBytes::from(vec![0x01; 32]);
@@ -80,7 +90,10 @@ pub struct VectorSimilarityPrecompile;
 
 impl VectorSimilarityPrecompile {
     pub fn run(input: &RevmBytes, gas_limit: u64) -> PrecompileResult {
-        debug!("Vector Similarity precompile called with {} bytes", input.len());
+        debug!(
+            "Vector Similarity precompile called with {} bytes",
+            input.len()
+        );
 
         const BASE_GAS: u64 = 30_000;
         const GAS_PER_DIMENSION: u64 = 500;
@@ -89,7 +102,9 @@ impl VectorSimilarityPrecompile {
         let gas_used = BASE_GAS + (dimensions as u64 * GAS_PER_DIMENSION);
 
         if gas_used > gas_limit {
-            return Err(PrecompileErrors::Error(revm_primitives::precompile::PrecompileError::OutOfGas));
+            return Err(PrecompileErrors::Error(
+                revm_primitives::precompile::PrecompileError::OutOfGas,
+            ));
         }
 
         let output = RevmBytes::from(vec![0x00; 32]);
@@ -110,7 +125,9 @@ impl IntentParserPrecompile {
         let gas_used = BASE_GAS + (input.len() as u64 * GAS_PER_CHAR);
 
         if gas_used > gas_limit {
-            return Err(PrecompileErrors::Error(revm_primitives::precompile::PrecompileError::OutOfGas));
+            return Err(PrecompileErrors::Error(
+                revm_primitives::precompile::PrecompileError::OutOfGas,
+            ));
         }
 
         let output = RevmBytes::from(vec![0x02; 64]);
@@ -132,7 +149,9 @@ impl SvmRouterPrecompile {
         let gas_used = BASE_GAS + (instructions as u64 * GAS_PER_INSTRUCTION);
 
         if gas_used > gas_limit {
-            return Err(PrecompileErrors::Error(revm_primitives::precompile::PrecompileError::OutOfGas));
+            return Err(PrecompileErrors::Error(
+                revm_primitives::precompile::PrecompileError::OutOfGas,
+            ));
         }
 
         let output = RevmBytes::from(vec![0x03; 32]);
@@ -145,7 +164,10 @@ pub struct L2MessagePasserPrecompile;
 
 impl L2MessagePasserPrecompile {
     pub fn run(input: &RevmBytes, gas_limit: u64) -> PrecompileResult {
-        debug!("L2 Message Passer precompile called with {} bytes", input.len());
+        debug!(
+            "L2 Message Passer precompile called with {} bytes",
+            input.len()
+        );
 
         // Gas constants
         const BASE_GAS: u64 = 25_000;
@@ -157,7 +179,9 @@ impl L2MessagePasserPrecompile {
         let total_gas = BASE_GAS + gas_for_data + GAS_FOR_STORAGE;
 
         if total_gas > gas_limit {
-            return Err(PrecompileErrors::Error(revm_primitives::precompile::PrecompileError::OutOfGas));
+            return Err(PrecompileErrors::Error(
+                revm_primitives::precompile::PrecompileError::OutOfGas,
+            ));
         }
 
         // Parse input as JSON-encoded L2MessageInput

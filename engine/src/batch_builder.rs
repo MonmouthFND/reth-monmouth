@@ -23,7 +23,10 @@ impl BatchBuilder {
 
     pub fn add_block(&mut self, block: Block) {
         self.pending_blocks.push_back(block);
-        debug!("Added block to batch builder, {} blocks pending", self.pending_blocks.len());
+        debug!(
+            "Added block to batch builder, {} blocks pending",
+            self.pending_blocks.len()
+        );
     }
 
     pub fn should_submit_batch(&self) -> bool {
@@ -73,13 +76,11 @@ impl BatchBuilder {
     }
 
     pub fn compress_batch(&self, batch: &SequencerBatch) -> Bytes {
-        if self.enable_compression {
-            let serialized = bincode::serialize(batch).unwrap_or_default();
-            Bytes::from(serialized)
-        } else {
-            let serialized = bincode::serialize(batch).unwrap_or_default();
-            Bytes::from(serialized)
-        }
+        let serialized = bincode::serialize(batch).unwrap_or_default();
+        // TODO: Implement actual compression when enable_compression is true
+        // For now, compression flag is stored but not yet implemented
+        let _ = self.enable_compression;
+        Bytes::from(serialized)
     }
 
     pub fn pending_blocks_count(&self) -> usize {
