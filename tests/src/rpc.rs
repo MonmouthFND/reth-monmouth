@@ -75,13 +75,17 @@ impl RpcClient {
             eyre::bail!("RPC error {}: {}", error.code, error.message);
         }
 
-        response.result.ok_or_else(|| eyre::eyre!("No result in response"))
+        response
+            .result
+            .ok_or_else(|| eyre::eyre!("No result in response"))
     }
 
     /// Get the chain ID
     pub async fn chain_id(&self) -> Result<u64> {
         let result = self.call("eth_chainId", json!([])).await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid chainId response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid chainId response"))?;
         let id = u64::from_str_radix(hex.trim_start_matches("0x"), 16)?;
         Ok(id)
     }
@@ -89,7 +93,9 @@ impl RpcClient {
     /// Get the current block number
     pub async fn block_number(&self) -> Result<u64> {
         let result = self.call("eth_blockNumber", json!([])).await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid blockNumber response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid blockNumber response"))?;
         let num = u64::from_str_radix(hex.trim_start_matches("0x"), 16)?;
         Ok(num)
     }
@@ -97,9 +103,14 @@ impl RpcClient {
     /// Get the balance of an address
     pub async fn get_balance(&self, address: Address) -> Result<U256> {
         let result = self
-            .call("eth_getBalance", json!([format!("{:?}", address), "latest"]))
+            .call(
+                "eth_getBalance",
+                json!([format!("{:?}", address), "latest"]),
+            )
             .await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid balance response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid balance response"))?;
         let balance = U256::from_str_radix(hex.trim_start_matches("0x"), 16)?;
         Ok(balance)
     }
@@ -107,9 +118,14 @@ impl RpcClient {
     /// Get the transaction count (nonce) for an address
     pub async fn get_transaction_count(&self, address: Address) -> Result<u64> {
         let result = self
-            .call("eth_getTransactionCount", json!([format!("{:?}", address), "latest"]))
+            .call(
+                "eth_getTransactionCount",
+                json!([format!("{:?}", address), "latest"]),
+            )
             .await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid txCount response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid txCount response"))?;
         let count = u64::from_str_radix(hex.trim_start_matches("0x"), 16)?;
         Ok(count)
     }
@@ -117,7 +133,9 @@ impl RpcClient {
     /// Send a raw transaction
     pub async fn send_raw_transaction(&self, raw_tx: &str) -> Result<B256> {
         let result = self.call("eth_sendRawTransaction", json!([raw_tx])).await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid tx hash response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid tx hash response"))?;
         let hash: B256 = hex.parse()?;
         Ok(hash)
     }
@@ -125,7 +143,10 @@ impl RpcClient {
     /// Get transaction receipt
     pub async fn get_transaction_receipt(&self, tx_hash: B256) -> Result<Option<Value>> {
         let result = self
-            .call("eth_getTransactionReceipt", json!([format!("{:?}", tx_hash)]))
+            .call(
+                "eth_getTransactionReceipt",
+                json!([format!("{:?}", tx_hash)]),
+            )
             .await?;
         if result.is_null() {
             Ok(None)
@@ -145,14 +166,18 @@ impl RpcClient {
                 }, "latest"]),
             )
             .await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid eth_call response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid eth_call response"))?;
         Ok(hex.to_string())
     }
 
     /// Get client version
     pub async fn client_version(&self) -> Result<String> {
         let result = self.call("web3_clientVersion", json!([])).await?;
-        let version = result.as_str().ok_or_else(|| eyre::eyre!("Invalid version response"))?;
+        let version = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid version response"))?;
         Ok(version.to_string())
     }
 
@@ -166,7 +191,9 @@ impl RpcClient {
     /// Get gas price
     pub async fn gas_price(&self) -> Result<U256> {
         let result = self.call("eth_gasPrice", json!([])).await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid gasPrice response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid gasPrice response"))?;
         let price = U256::from_str_radix(hex.trim_start_matches("0x"), 16)?;
         Ok(price)
     }
@@ -182,7 +209,9 @@ impl RpcClient {
     /// Get peer count
     pub async fn net_peer_count(&self) -> Result<u64> {
         let result = self.call("net_peerCount", json!([])).await?;
-        let hex = result.as_str().ok_or_else(|| eyre::eyre!("Invalid peerCount response"))?;
+        let hex = result
+            .as_str()
+            .ok_or_else(|| eyre::eyre!("Invalid peerCount response"))?;
         let count = u64::from_str_radix(hex.trim_start_matches("0x"), 16)?;
         Ok(count)
     }

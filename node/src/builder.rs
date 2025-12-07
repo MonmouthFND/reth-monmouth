@@ -23,7 +23,9 @@ impl MonmouthNodeBuilder {
             info!("Starting ExEx host service");
             let config = self.args.exex_host_config();
             let host = ExExHost::new(config);
-            host.start().await.map_err(|e| eyre::eyre!("Failed to start ExEx host: {}", e))?;
+            host.start()
+                .await
+                .map_err(|e| eyre::eyre!("Failed to start ExEx host: {}", e))?;
             self.exex_host = Some(host);
         }
 
@@ -31,7 +33,10 @@ impl MonmouthNodeBuilder {
             info!("Starting L2 sequencer");
             let config = self.args.sequencer_config();
             let mut sequencer = L2Sequencer::new(config);
-            let _handle = sequencer.start().await.map_err(|e| eyre::eyre!("Failed to start sequencer: {}", e))?;
+            let _handle = sequencer
+                .start()
+                .await
+                .map_err(|e| eyre::eyre!("Failed to start sequencer: {}", e))?;
             self.sequencer = Some(sequencer);
         }
 

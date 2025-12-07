@@ -1,9 +1,8 @@
-use alloy_primitives::{hex, Address};
 use alloy_consensus::transaction::Transaction;
+use alloy_primitives::{hex, Address};
 use async_trait::async_trait;
 use monmouth_primitives::{
-    ClassificationResult, ExecutionPath, IntentClassification,
-    TransactionType,
+    ClassificationResult, ExecutionPath, IntentClassification, TransactionType,
 };
 use reth_primitives::TransactionSigned;
 
@@ -27,30 +26,30 @@ impl HeuristicClassifier {
 
     fn detect_intent(&self, tx: &TransactionSigned) -> IntentClassification {
         let data = tx.input();
-        
+
         if data.len() < 4 {
             return IntentClassification::Transfer;
         }
 
         let selector = &data[0..4];
-        
+
         match hex::encode(selector).as_str() {
             "a9059cbb" => IntentClassification::Transfer,
             "095ea7b3" => IntentClassification::Transfer,
             "23b872dd" => IntentClassification::Transfer,
-            
+
             "38ed1739" | "7ff36ab5" | "18cbafe5" | "fb3bdb41" => IntentClassification::Swap,
-            
+
             "e8e33700" | "f305d719" | "02751cec" | "054d50d4" => IntentClassification::Lending,
-            
+
             "a694fc3a" | "2e1a7d4d" | "379607f5" => IntentClassification::Staking,
-            
+
             "42842e0e" | "b88d4fde" if self.is_nft_contract(tx.to()) => {
                 IntentClassification::NftOperation
             }
-            
+
             _ if data.len() > 1000 => IntentClassification::AiInference,
-            
+
             _ => IntentClassification::Unknown,
         }
     }
@@ -59,7 +58,11 @@ impl HeuristicClassifier {
         false
     }
 
-    fn determine_execution_path(&self, intent: &IntentClassification, data_size: usize) -> ExecutionPath {
+    fn determine_execution_path(
+        &self,
+        intent: &IntentClassification,
+        data_size: usize,
+    ) -> ExecutionPath {
         match intent {
             IntentClassification::AiInference => ExecutionPath::RagEnhanced,
             IntentClassification::Swap if data_size > 500 => ExecutionPath::HybridEvmSvm,
@@ -108,7 +111,10 @@ impl TransactionClassifier for HeuristicClassifier {
             ExecutionPath::RagEnhanced | ExecutionPath::HybridEvmSvm
         );
 
-        let estimated_compute_units = if matches!(execution_path, ExecutionPath::SvmOnly | ExecutionPath::HybridEvmSvm) {
+        let estimated_compute_units = if matches!(
+            execution_path,
+            ExecutionPath::SvmOnly | ExecutionPath::HybridEvmSvm
+        ) {
             Some((data_size as u64) * 100)
         } else {
             None

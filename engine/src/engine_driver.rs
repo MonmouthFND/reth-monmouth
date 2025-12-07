@@ -230,7 +230,14 @@ impl EngineDriver {
         // Try getting exchange capabilities - a lightweight call
         let _: Vec<String> = self
             .client
-            .request("engine_exchangeCapabilities", rpc_params![vec!["engine_forkchoiceUpdatedV3", "engine_getPayloadV3", "engine_newPayloadV3"]])
+            .request(
+                "engine_exchangeCapabilities",
+                rpc_params![vec![
+                    "engine_forkchoiceUpdatedV3",
+                    "engine_getPayloadV3",
+                    "engine_newPayloadV3"
+                ]],
+            )
             .await
             .map_err(|e| EngineDriverError::Rpc(e.to_string()))?;
         Ok(())

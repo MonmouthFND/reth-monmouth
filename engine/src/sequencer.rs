@@ -1,8 +1,8 @@
 use crate::batch_builder::BatchBuilder;
 use crate::config::SequencerConfig;
 use crate::l1_client::L1Client;
-use alloy_primitives::B256;
 use alloy_consensus::Transaction;
+use alloy_primitives::B256;
 use monmouth_primitives::{MessageQueue, SequencerBatch, WithdrawalRequest};
 use parking_lot::RwLock;
 use reth_primitives::TransactionSigned;
@@ -144,7 +144,9 @@ impl L2Sequencer {
         let (shutdown_tx3, mut shutdown_rx3) = mpsc::channel(1);
         if let Some(l1_client) = &self.l1_client {
             let l1 = l1_client.clone();
-            let poll_interval = self.config.l1_client_config
+            let poll_interval = self
+                .config
+                .l1_client_config
                 .as_ref()
                 .map(|c| c.deposit_poll_interval)
                 .unwrap_or(std::time::Duration::from_secs(12));
@@ -181,7 +183,7 @@ impl L2Sequencer {
         _current_l1: &Arc<RwLock<(u64, B256)>>,
     ) {
         let mut txs = pending_txs.write();
-        
+
         if txs.is_empty() {
             debug!("No pending transactions, skipping block production");
             return;
@@ -226,7 +228,10 @@ impl L2Sequencer {
         let withdrawal_count = message_queue.withdrawal_count();
 
         if withdrawal_count > 0 {
-            info!("Processing {} pending withdrawals for batch submission", withdrawal_count);
+            info!(
+                "Processing {} pending withdrawals for batch submission",
+                withdrawal_count
+            );
 
             // Dequeue all pending withdrawals
             while let Some(l2_message) = message_queue.dequeue_withdrawal() {
@@ -243,7 +248,10 @@ impl L2Sequencer {
                 withdrawals.push(withdrawal);
             }
 
-            info!("Included {} withdrawals in batch submission", withdrawals.len());
+            info!(
+                "Included {} withdrawals in batch submission",
+                withdrawals.len()
+            );
         }
 
         // If no L1 client, just log
@@ -293,7 +301,10 @@ impl L2Sequencer {
                 *parent_batch_hash.write() = batch_hash;
 
                 // Also commit state root
-                if let Err(e) = client.commit_state_root(batch.batch_index, batch.state_root).await {
+                if let Err(e) = client
+                    .commit_state_root(batch.batch_index, batch.state_root)
+                    .await
+                {
                     warn!("Failed to commit state root: {}", e);
                 }
             }

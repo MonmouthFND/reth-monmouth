@@ -1,8 +1,8 @@
 use alloy_primitives::Address;
 use clap::Args;
-use monmouth_primitives::AgentPoolConfig;
 use monmouth_engine::{EngineDriverConfig, L1ClientConfig, SequencerConfig};
 use monmouth_exex_host::ExExHostConfig;
+use monmouth_primitives::AgentPoolConfig;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -20,22 +20,46 @@ pub struct MonmouthNodeArgs {
     #[arg(long, env = "L1_RPC_URL", help = "L1 RPC URL for sequencer")]
     pub l1_rpc_url: Option<String>,
 
-    #[arg(long, env = "SEQUENCER_PRIVATE_KEY", help = "Private key for signing L1 transactions")]
+    #[arg(
+        long,
+        env = "SEQUENCER_PRIVATE_KEY",
+        help = "Private key for signing L1 transactions"
+    )]
     pub sequencer_private_key: Option<String>,
 
-    #[arg(long, env = "L1_SEQUENCER_INBOX", help = "SequencerInbox contract address on L1")]
+    #[arg(
+        long,
+        env = "L1_SEQUENCER_INBOX",
+        help = "SequencerInbox contract address on L1"
+    )]
     pub l1_sequencer_inbox: Option<String>,
 
-    #[arg(long, env = "L1_STATE_COMMITMENT_CHAIN", help = "StateCommitmentChain contract address on L1")]
+    #[arg(
+        long,
+        env = "L1_STATE_COMMITMENT_CHAIN",
+        help = "StateCommitmentChain contract address on L1"
+    )]
     pub l1_state_commitment_chain: Option<String>,
 
-    #[arg(long, env = "L1_BRIDGE_ADDRESS", help = "L1StandardBridge contract address on L1")]
+    #[arg(
+        long,
+        env = "L1_BRIDGE_ADDRESS",
+        help = "L1StandardBridge contract address on L1"
+    )]
     pub l1_bridge: Option<String>,
 
-    #[arg(long, env = "L1_CROSS_DOMAIN_MESSENGER", help = "CrossDomainMessenger contract address on L1")]
+    #[arg(
+        long,
+        env = "L1_CROSS_DOMAIN_MESSENGER",
+        help = "CrossDomainMessenger contract address on L1"
+    )]
     pub l1_cross_domain_messenger: Option<String>,
 
-    #[arg(long, default_value = "12", help = "L1 deposit poll interval in seconds")]
+    #[arg(
+        long,
+        default_value = "12",
+        help = "L1 deposit poll interval in seconds"
+    )]
     pub l1_deposit_poll_interval: u64,
 
     #[arg(long, help = "Enable ExEx host service")]
@@ -54,10 +78,18 @@ pub struct MonmouthNodeArgs {
     #[arg(long, default_value = "http://127.0.0.1:8551", help = "Engine API URL")]
     pub engine_url: String,
 
-    #[arg(long, default_value = "./data/jwt.hex", help = "Path to JWT secret file")]
+    #[arg(
+        long,
+        default_value = "./data/jwt.hex",
+        help = "Path to JWT secret file"
+    )]
     pub jwt_secret_path: String,
 
-    #[arg(long, default_value = "2", help = "Block production interval in seconds for engine driver")]
+    #[arg(
+        long,
+        default_value = "2",
+        help = "Block production interval in seconds for engine driver"
+    )]
     pub engine_block_time: u64,
 
     #[arg(long, help = "Fee recipient address for produced blocks")]
@@ -67,17 +99,17 @@ pub struct MonmouthNodeArgs {
 impl MonmouthNodeArgs {
     pub fn agent_pool_config(&self) -> AgentPoolConfig {
         let mut config = AgentPoolConfig::default();
-        
+
         if let Some(endpoint) = &self.exex_endpoint {
             config.exex_endpoint = endpoint.clone();
         }
-        
+
         if let Some(threshold) = self.confidence_threshold {
             config.confidence_threshold = threshold;
         }
-        
+
         config.enable_context_fetching = self.enable_context;
-        
+
         config
     }
 

@@ -23,7 +23,10 @@ impl BatchBuilder {
 
     pub fn add_block(&mut self, block: Block) {
         self.pending_blocks.push_back(block);
-        debug!("Added block to batch builder, {} blocks pending", self.pending_blocks.len());
+        debug!(
+            "Added block to batch builder, {} blocks pending",
+            self.pending_blocks.len()
+        );
     }
 
     pub fn should_submit_batch(&self) -> bool {

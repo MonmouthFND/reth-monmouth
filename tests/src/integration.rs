@@ -23,7 +23,10 @@ async fn test_chain_id() {
     let client = get_rpc_client();
 
     let chain_id = client.chain_id().await.expect("Failed to get chain ID");
-    assert_eq!(chain_id, MONMOUTH_CHAIN_ID, "Chain ID should be {MONMOUTH_CHAIN_ID}");
+    assert_eq!(
+        chain_id, MONMOUTH_CHAIN_ID,
+        "Chain ID should be {MONMOUTH_CHAIN_ID}"
+    );
 }
 
 /// Test that we can get the current block number
@@ -32,7 +35,10 @@ async fn test_chain_id() {
 async fn test_block_number() {
     let client = get_rpc_client();
 
-    let block_number = client.block_number().await.expect("Failed to get block number");
+    let block_number = client
+        .block_number()
+        .await
+        .expect("Failed to get block number");
     // Successfully retrieved block number (u64 is always >= 0)
     // Just verify the call succeeded - block_number existing is the test
     let _ = block_number;
@@ -45,7 +51,10 @@ async fn test_account_balance() {
     let client = get_rpc_client();
 
     let (address, _) = helpers::get_test_account(0);
-    let balance = client.get_balance(address).await.expect("Failed to get balance");
+    let balance = client
+        .get_balance(address)
+        .await
+        .expect("Failed to get balance");
 
     // Should have at least some ETH (10,000 ETH pre-funded minus any spent)
     let min_expected = U256::from(1000) * U256::from(10).pow(U256::from(18)); // 1000 ETH
@@ -61,7 +70,10 @@ async fn test_account_balance() {
 async fn test_client_version() {
     let client = get_rpc_client();
 
-    let version = client.client_version().await.expect("Failed to get client version");
+    let version = client
+        .client_version()
+        .await
+        .expect("Failed to get client version");
     // Should contain "reth" since we're built on reth
     assert!(
         version.to_lowercase().contains("reth"),
@@ -224,6 +236,9 @@ async fn test_rpc_health() {
     let _ = client.chain_id().await.expect("chain_id failed");
     let _ = client.block_number().await.expect("block_number failed");
     let _ = client.gas_price().await.expect("gas_price failed");
-    let _ = client.client_version().await.expect("client_version failed");
+    let _ = client
+        .client_version()
+        .await
+        .expect("client_version failed");
     let _ = client.syncing().await.expect("syncing failed");
 }

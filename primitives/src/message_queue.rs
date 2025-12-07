@@ -174,8 +174,12 @@ mod tests {
     fn test_message_types() {
         let queue = MessageQueue::new();
 
-        queue.enqueue(create_test_message(L2MessageType::Withdrawal, 1)).unwrap();
-        queue.enqueue(create_test_message(L2MessageType::Deposit, 2)).unwrap();
+        queue
+            .enqueue(create_test_message(L2MessageType::Withdrawal, 1))
+            .unwrap();
+        queue
+            .enqueue(create_test_message(L2MessageType::Deposit, 2))
+            .unwrap();
 
         assert_eq!(queue.withdrawal_count(), 1);
         assert_eq!(queue.deposit_count(), 1);

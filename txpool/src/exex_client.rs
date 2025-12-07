@@ -1,13 +1,12 @@
 use alloy_consensus::Transaction;
 use alloy_primitives::U256;
 use monmouth_exex_host::proto::{
-    ex_ex_service_client::ExExServiceClient,
-    ClassificationResponse, ExecutionPlanRequest, ExecutionPlanResponse,
-    Transaction as ProtoTransaction, TransactionRequest,
+    ex_ex_service_client::ExExServiceClient, ClassificationResponse, ExecutionPlanRequest,
+    ExecutionPlanResponse, Transaction as ProtoTransaction, TransactionRequest,
 };
 use monmouth_primitives::{
-    ClassificationResult, ExecutionPath, ExecutionPlan, ExecutionStep,
-    IntentClassification, StepType, TransactionContext, TransactionType,
+    ClassificationResult, ExecutionPath, ExecutionPlan, ExecutionStep, IntentClassification,
+    StepType, TransactionContext, TransactionType,
 };
 use reth_primitives::TransactionSigned;
 use thiserror::Error;
@@ -49,9 +48,11 @@ impl ExExClient {
         // In practice, prefer using `connect()` for async initialization
         Ok(Self {
             client: ExExServiceClient::new(
-                Channel::builder(endpoint.parse().map_err(|e| {
-                    ExExClientError::Connection(format!("Invalid endpoint: {e}"))
-                })?)
+                Channel::builder(
+                    endpoint.parse().map_err(|e| {
+                        ExExClientError::Connection(format!("Invalid endpoint: {e}"))
+                    })?,
+                )
                 .connect_lazy(),
             ),
             endpoint: endpoint.to_string(),
@@ -263,22 +264,46 @@ mod tests {
 
     #[test]
     fn test_parse_tx_type() {
-        assert_eq!(ExExClient::parse_tx_type("StandardEvm"), TransactionType::StandardEvm);
-        assert_eq!(ExExClient::parse_tx_type("AgentIntent"), TransactionType::AgentIntent);
-        assert_eq!(ExExClient::parse_tx_type("unknown"), TransactionType::StandardEvm);
+        assert_eq!(
+            ExExClient::parse_tx_type("StandardEvm"),
+            TransactionType::StandardEvm
+        );
+        assert_eq!(
+            ExExClient::parse_tx_type("AgentIntent"),
+            TransactionType::AgentIntent
+        );
+        assert_eq!(
+            ExExClient::parse_tx_type("unknown"),
+            TransactionType::StandardEvm
+        );
     }
 
     #[test]
     fn test_parse_execution_path() {
-        assert_eq!(ExExClient::parse_execution_path("EvmOnly"), ExecutionPath::EvmOnly);
-        assert_eq!(ExExClient::parse_execution_path("HybridEvmSvm"), ExecutionPath::HybridEvmSvm);
-        assert_eq!(ExExClient::parse_execution_path("unknown"), ExecutionPath::EvmOnly);
+        assert_eq!(
+            ExExClient::parse_execution_path("EvmOnly"),
+            ExecutionPath::EvmOnly
+        );
+        assert_eq!(
+            ExExClient::parse_execution_path("HybridEvmSvm"),
+            ExecutionPath::HybridEvmSvm
+        );
+        assert_eq!(
+            ExExClient::parse_execution_path("unknown"),
+            ExecutionPath::EvmOnly
+        );
     }
 
     #[test]
     fn test_parse_intent() {
         assert_eq!(ExExClient::parse_intent("Swap"), IntentClassification::Swap);
-        assert_eq!(ExExClient::parse_intent("Transfer"), IntentClassification::Transfer);
-        assert_eq!(ExExClient::parse_intent("unknown"), IntentClassification::Unknown);
+        assert_eq!(
+            ExExClient::parse_intent("Transfer"),
+            IntentClassification::Transfer
+        );
+        assert_eq!(
+            ExExClient::parse_intent("unknown"),
+            IntentClassification::Unknown
+        );
     }
 }

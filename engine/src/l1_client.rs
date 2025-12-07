@@ -6,11 +6,11 @@
 //! - Monitoring L1StandardBridge for deposits
 
 use alloy_network::EthereumWallet;
-use alloy_primitives::{Address, Bytes, B256, keccak256};
-use alloy_sol_types::SolValue;
+use alloy_primitives::{keccak256, Address, Bytes, B256};
 use alloy_provider::{Provider, ProviderBuilder};
 use alloy_signer_local::PrivateKeySigner;
 use alloy_sol_types::sol;
+use alloy_sol_types::SolValue;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -256,13 +256,9 @@ impl L1Client {
         let provider = self.get_provider();
         let contract = ISequencerInbox::new(self.sequencer_inbox, provider);
 
-        let batch_index = contract
-            .latestBatchIndex()
-            .call()
-            .await
-            .map_err(|e| {
-                L1ClientError::Contract(format!("Failed to get latest batch index: {}", e))
-            })?;
+        let batch_index = contract.latestBatchIndex().call().await.map_err(|e| {
+            L1ClientError::Contract(format!("Failed to get latest batch index: {}", e))
+        })?;
 
         Ok(batch_index)
     }
@@ -277,7 +273,10 @@ impl L1Client {
             .call()
             .await
             .map_err(|e| {
-                L1ClientError::Contract(format!("Failed to get batch hash for index {}: {}", batch_index, e))
+                L1ClientError::Contract(format!(
+                    "Failed to get batch hash for index {}: {}",
+                    batch_index, e
+                ))
             })?;
 
         Ok(batch_hash)
@@ -288,13 +287,9 @@ impl L1Client {
         let provider = self.get_provider();
         let contract = IStateCommitmentChain::new(self.state_commitment_chain, provider);
 
-        let batch_index = contract
-            .latestCommittedBatch()
-            .call()
-            .await
-            .map_err(|e| {
-                L1ClientError::Contract(format!("Failed to get latest committed batch: {}", e))
-            })?;
+        let batch_index = contract.latestCommittedBatch().call().await.map_err(|e| {
+            L1ClientError::Contract(format!("Failed to get latest committed batch: {}", e))
+        })?;
 
         Ok(batch_index)
     }

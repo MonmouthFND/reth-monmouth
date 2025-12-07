@@ -1,5 +1,5 @@
-use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_consensus::{EthereumTxEnvelope, TxEip4844};
+use alloy_primitives::{Address, Bytes, B256, U256};
 use reth_primitives::{Block, Transaction};
 use serde::{Deserialize, Serialize};
 
