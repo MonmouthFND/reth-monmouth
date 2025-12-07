@@ -118,9 +118,12 @@ impl MonmouthNodeArgs {
 
         // Build L1 client config if we have the required parameters
         if let (Some(l1_url), Some(private_key)) = (&self.l1_rpc_url, &self.sequencer_private_key) {
-            let mut l1_config = L1ClientConfig::default();
-            l1_config.l1_rpc_url = l1_url.clone();
-            l1_config.private_key = private_key.clone();
+            #[allow(clippy::field_reassign_with_default)]
+            let mut l1_config = L1ClientConfig {
+                l1_rpc_url: l1_url.clone(),
+                private_key: private_key.clone(),
+                ..Default::default()
+            };
 
             // Parse contract addresses
             if let Some(addr) = &self.l1_sequencer_inbox {
@@ -166,11 +169,12 @@ impl MonmouthNodeArgs {
     }
 
     pub fn engine_driver_config(&self) -> EngineDriverConfig {
-        let mut config = EngineDriverConfig::default();
-
-        config.engine_url = self.engine_url.clone();
-        config.jwt_secret_path = self.jwt_secret_path.clone();
-        config.block_time = Duration::from_secs(self.engine_block_time);
+        let mut config = EngineDriverConfig {
+            engine_url: self.engine_url.clone(),
+            jwt_secret_path: self.jwt_secret_path.clone(),
+            block_time: Duration::from_secs(self.engine_block_time),
+            ..Default::default()
+        };
 
         if let Some(recipient) = &self.fee_recipient {
             if let Ok(addr) = recipient.parse() {

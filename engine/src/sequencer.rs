@@ -1,4 +1,3 @@
-use crate::batch_builder::BatchBuilder;
 use crate::config::SequencerConfig;
 use crate::l1_client::L1Client;
 use alloy_consensus::Transaction;
@@ -13,7 +12,6 @@ use tracing::{debug, info, warn};
 
 pub struct L2Sequencer {
     config: SequencerConfig,
-    batch_builder: BatchBuilder,
     current_l1_block: Arc<RwLock<(u64, B256)>>,
     pending_transactions: Arc<RwLock<Vec<TransactionSigned>>>,
     message_queue: MessageQueue,
@@ -32,8 +30,7 @@ pub struct L2Sequencer {
 impl L2Sequencer {
     pub fn new(config: SequencerConfig) -> Self {
         Self {
-            config: config.clone(),
-            batch_builder: BatchBuilder::new(config.max_batch_size, config.enable_compression),
+            config,
             current_l1_block: Arc::new(RwLock::new((0, B256::ZERO))),
             pending_transactions: Arc::new(RwLock::new(Vec::new())),
             message_queue: MessageQueue::new(),

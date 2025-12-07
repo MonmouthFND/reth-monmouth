@@ -4,11 +4,8 @@
 //! This replaces the need for an external consensus client by internally
 //! triggering block production via forkchoiceUpdated and newPayload calls.
 
-use alloy_primitives::{Address, B256, U256};
-use alloy_rpc_types_engine::{
-    ExecutionPayloadV3, ForkchoiceState, ForkchoiceUpdated, PayloadAttributes, PayloadId,
-    PayloadStatusEnum,
-};
+use alloy_primitives::{Address, B256};
+use alloy_rpc_types_engine::{ForkchoiceState, ForkchoiceUpdated, PayloadAttributes};
 use jsonrpsee::core::client::ClientT;
 use jsonrpsee::http_client::{HttpClient, HttpClientBuilder};
 use jsonrpsee::rpc_params;
@@ -105,7 +102,7 @@ impl EngineDriver {
 
         // Generate JWT token
         let token = Self::generate_jwt_token(jwt_secret)?;
-        let auth_value = HeaderValue::from_str(&format!("Bearer {}", token))
+        let auth_value = HeaderValue::from_str(&format!("Bearer {token}"))
             .map_err(|e| EngineDriverError::JwtRead(e.to_string()))?;
 
         headers.insert("Authorization", auth_value);
@@ -119,7 +116,7 @@ impl EngineDriver {
         use sha2::Sha256;
 
         let secret_bytes = hex::decode(secret_hex.trim_start_matches("0x"))
-            .map_err(|e| EngineDriverError::JwtRead(format!("Invalid hex: {}", e)))?;
+            .map_err(|e| EngineDriverError::JwtRead(format!("Invalid hex: {e}")))?;
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -131,18 +128,18 @@ impl EngineDriver {
         let header_b64 = URL_SAFE_NO_PAD.encode(header);
 
         // JWT payload
-        let payload = format!(r#"{{"iat":{}}}"#, timestamp);
+        let payload = format!(r#"{{"iat":{timestamp}}}"#);
         let payload_b64 = URL_SAFE_NO_PAD.encode(payload);
 
         // Sign
-        let message = format!("{}.{}", header_b64, payload_b64);
+        let message = format!("{header_b64}.{payload_b64}");
         let mut mac = Hmac::<Sha256>::new_from_slice(&secret_bytes)
             .map_err(|e| EngineDriverError::JwtRead(e.to_string()))?;
         mac.update(message.as_bytes());
         let signature = mac.finalize().into_bytes();
         let signature_b64 = URL_SAFE_NO_PAD.encode(signature);
 
-        Ok(format!("{}.{}.{}", header_b64, payload_b64, signature_b64))
+        Ok(format!("{header_b64}.{payload_b64}.{signature_b64}"))
     }
 
     /// Start the engine driver loop
@@ -326,7 +323,7 @@ impl EngineDriver {
 
         let block_hash: B256 = block_hash
             .parse()
-            .map_err(|e| EngineDriverError::Payload(format!("Invalid block hash: {}", e)))?;
+            .map_err(|e| EngineDriverError::Payload(format!("Invalid block hash: {e}")))?;
 
         debug!(target: "monmouth::engine", "Built block: {:?}", block_hash);
 
@@ -350,8 +347,7 @@ impl EngineDriver {
 
         if status != "VALID" {
             return Err(EngineDriverError::Payload(format!(
-                "newPayload returned {}: {:?}",
-                status, new_payload_response
+                "newPayload returned {status}: {new_payload_response:?}"
             )));
         }
 

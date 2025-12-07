@@ -106,7 +106,7 @@ impl L1Client {
         let signer: PrivateKeySigner = config
             .private_key
             .parse()
-            .map_err(|e| L1ClientError::Signer(format!("Invalid private key: {}", e)))?;
+            .map_err(|e| L1ClientError::Signer(format!("Invalid private key: {e}")))?;
 
         let sequencer_address = signer.address();
         info!(
@@ -120,7 +120,7 @@ impl L1Client {
         let rpc_url: url::Url = config
             .l1_rpc_url
             .parse()
-            .map_err(|e| L1ClientError::Provider(format!("Invalid RPC URL: {}", e)))?;
+            .map_err(|e| L1ClientError::Provider(format!("Invalid RPC URL: {e}")))?;
 
         Ok(Self {
             wallet,
@@ -135,14 +135,14 @@ impl L1Client {
 
     /// Get a read-only provider for queries
     fn get_provider(&self) -> impl Provider + Clone {
-        ProviderBuilder::new().on_http(self.rpc_url.as_ref().clone())
+        ProviderBuilder::new().connect_http(self.rpc_url.as_ref().clone())
     }
 
     /// Get a provider with wallet for sending transactions
     fn get_signer_provider(&self) -> impl Provider + Clone {
         ProviderBuilder::new()
             .wallet(self.wallet.clone())
-            .on_http(self.rpc_url.as_ref().clone())
+            .connect_http(self.rpc_url.as_ref().clone())
     }
 
     /// Submit a batch to the L1 SequencerInbox contract
@@ -158,7 +158,7 @@ impl L1Client {
 
         // Serialize transactions
         let tx_data = bincode::serialize(&batch.transactions).map_err(|e| {
-            L1ClientError::Contract(format!("Failed to serialize transactions: {}", e))
+            L1ClientError::Contract(format!("Failed to serialize transactions: {e}"))
         })?;
 
         // Compute merkle roots
@@ -197,14 +197,14 @@ impl L1Client {
         let pending_tx = call
             .send()
             .await
-            .map_err(|e| L1ClientError::Transaction(format!("Failed to send batch tx: {}", e)))?;
+            .map_err(|e| L1ClientError::Transaction(format!("Failed to send batch tx: {e}")))?;
 
         info!("Batch tx sent, waiting for confirmation...");
 
         let receipt = pending_tx
             .get_receipt()
             .await
-            .map_err(|e| L1ClientError::Transaction(format!("Failed to get receipt: {}", e)))?;
+            .map_err(|e| L1ClientError::Transaction(format!("Failed to get receipt: {e}")))?;
 
         let tx_hash = receipt.transaction_hash;
         info!(
@@ -235,12 +235,12 @@ impl L1Client {
         let pending_tx = call
             .send()
             .await
-            .map_err(|e| L1ClientError::Transaction(format!("Failed to send commit tx: {}", e)))?;
+            .map_err(|e| L1ClientError::Transaction(format!("Failed to send commit tx: {e}")))?;
 
         let receipt = pending_tx
             .get_receipt()
             .await
-            .map_err(|e| L1ClientError::Transaction(format!("Failed to get receipt: {}", e)))?;
+            .map_err(|e| L1ClientError::Transaction(format!("Failed to get receipt: {e}")))?;
 
         let tx_hash = receipt.transaction_hash;
         debug!(
@@ -257,7 +257,7 @@ impl L1Client {
         let contract = ISequencerInbox::new(self.sequencer_inbox, provider);
 
         let batch_index = contract.latestBatchIndex().call().await.map_err(|e| {
-            L1ClientError::Contract(format!("Failed to get latest batch index: {}", e))
+            L1ClientError::Contract(format!("Failed to get latest batch index: {e}"))
         })?;
 
         Ok(batch_index)
@@ -274,8 +274,7 @@ impl L1Client {
             .await
             .map_err(|e| {
                 L1ClientError::Contract(format!(
-                    "Failed to get batch hash for index {}: {}",
-                    batch_index, e
+                    "Failed to get batch hash for index {batch_index}: {e}"
                 ))
             })?;
 
@@ -288,7 +287,7 @@ impl L1Client {
         let contract = IStateCommitmentChain::new(self.state_commitment_chain, provider);
 
         let batch_index = contract.latestCommittedBatch().call().await.map_err(|e| {
-            L1ClientError::Contract(format!("Failed to get latest committed batch: {}", e))
+            L1ClientError::Contract(format!("Failed to get latest committed batch: {e}"))
         })?;
 
         Ok(batch_index)
@@ -311,9 +310,10 @@ impl L1Client {
             .from_block(from_block)
             .to_block(to_block);
 
-        let logs = filter.query().await.map_err(|e| {
-            L1ClientError::Contract(format!("Failed to query deposit events: {}", e))
-        })?;
+        let logs = filter
+            .query()
+            .await
+            .map_err(|e| L1ClientError::Contract(format!("Failed to query deposit events: {e}")))?;
 
         let deposits: Vec<DepositRequest> = logs
             .into_iter()
@@ -350,7 +350,7 @@ impl L1Client {
         self.get_provider()
             .get_block_number()
             .await
-            .map_err(|e| L1ClientError::Provider(format!("Failed to get block number: {}", e)))
+            .map_err(|e| L1ClientError::Provider(format!("Failed to get block number: {e}")))
     }
 
     /// Get the last scanned L1 block
