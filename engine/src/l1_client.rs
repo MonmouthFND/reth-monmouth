@@ -49,6 +49,17 @@ sol! {
 
     #[sol(rpc)]
     interface IL1StandardBridge {
+        struct WithdrawalProof {
+            uint64 nonce;
+            address sender;
+            address target;
+            uint256 value;
+            uint64 gasLimit;
+            bytes data;
+            uint64 l2BlockNumber;
+            bytes32 messageHash;
+        }
+
         event ETHDepositInitiated(
             address indexed from,
             address indexed to,
@@ -58,7 +69,16 @@ sol! {
             bytes data
         );
 
+        event WithdrawalFinalized(
+            bytes32 indexed messageHash,
+            address indexed sender,
+            address indexed target,
+            uint256 value
+        );
+
         function depositNonce() external view returns (uint256);
+        function finalizeWithdrawal(WithdrawalProof calldata proof, uint64 batchIndex) external;
+        function isWithdrawalFinalized(bytes32 messageHash) external view returns (bool);
     }
 }
 
@@ -383,6 +403,99 @@ impl L1Client {
             && self.state_commitment_chain != Address::ZERO
             && self.bridge != Address::ZERO
     }
+
+    /// Finalize a withdrawal on L1
+    /// This calls the L1StandardBridge.finalizeWithdrawal function to send ETH to the target address
+    pub async fn finalize_withdrawal(
+        &self,
+        withdrawal: &WithdrawalRequest,
+        batch_index: u64,
+    ) -> Result<B256, L1ClientError> {
+        info!(
+            "Finalizing withdrawal {} to {:?} for {} wei",
+            withdrawal.nonce, withdrawal.target, withdrawal.value
+        );
+
+        // Check if already finalized first
+        if self
+            .is_withdrawal_finalized(withdrawal.message_hash)
+            .await?
+        {
+            return Err(L1ClientError::Contract(format!(
+                "Withdrawal {} already finalized",
+                withdrawal.nonce
+            )));
+        }
+
+        let provider = self.get_signer_provider();
+        let contract = IL1StandardBridge::new(self.bridge, provider);
+
+        // Build the withdrawal proof struct
+        let proof = IL1StandardBridge::WithdrawalProof {
+            nonce: withdrawal.nonce,
+            sender: withdrawal.sender,
+            target: withdrawal.target,
+            value: withdrawal.value,
+            gasLimit: withdrawal.gas_limit,
+            data: withdrawal.data.clone(),
+            l2BlockNumber: withdrawal.l2_block_number,
+            messageHash: withdrawal.message_hash,
+        };
+
+        let call = contract.finalizeWithdrawal(proof, batch_index);
+
+        let pending_tx = call.send().await.map_err(|e| {
+            L1ClientError::Transaction(format!("Failed to send finalize withdrawal tx: {e}"))
+        })?;
+
+        info!("Finalization tx sent, waiting for confirmation...");
+
+        let receipt = pending_tx
+            .get_receipt()
+            .await
+            .map_err(|e| L1ClientError::Transaction(format!("Failed to get receipt: {e}")))?;
+
+        let tx_hash = receipt.transaction_hash;
+        info!(
+            "Withdrawal {} finalized successfully! L1 tx: {:?}",
+            withdrawal.nonce, tx_hash
+        );
+
+        Ok(tx_hash)
+    }
+
+    /// Check if a withdrawal has already been finalized on L1
+    pub async fn is_withdrawal_finalized(&self, message_hash: B256) -> Result<bool, L1ClientError> {
+        let provider = self.get_provider();
+        let contract = IL1StandardBridge::new(self.bridge, provider);
+
+        let is_finalized = contract
+            .isWithdrawalFinalized(message_hash)
+            .call()
+            .await
+            .map_err(|e| {
+                L1ClientError::Contract(format!("Failed to check withdrawal status: {e}"))
+            })?;
+
+        Ok(is_finalized)
+    }
+
+    /// Finalize multiple withdrawals in sequence
+    /// Returns a vec of (withdrawal_nonce, tx_hash) for successful finalizations
+    pub async fn finalize_withdrawals(
+        &self,
+        withdrawals: &[WithdrawalRequest],
+        batch_index: u64,
+    ) -> Vec<(u64, Result<B256, L1ClientError>)> {
+        let mut results = Vec::with_capacity(withdrawals.len());
+
+        for withdrawal in withdrawals {
+            let result = self.finalize_withdrawal(withdrawal, batch_index).await;
+            results.push((withdrawal.nonce, result));
+        }
+
+        results
+    }
 }
 
 #[cfg(test)]
@@ -427,5 +540,41 @@ mod tests {
         let root = alloy_primitives::keccak256(&data);
 
         assert_ne!(root, B256::ZERO);
+    }
+
+    #[test]
+    fn test_withdrawal_proof_struct_matches_contract() {
+        // Verify the WithdrawalProof struct can be created with expected values
+        let withdrawal = WithdrawalRequest {
+            nonce: 42,
+            sender: Address::repeat_byte(0x01),
+            target: Address::repeat_byte(0x02),
+            value: U256::from(1_000_000_000_000_000_000u128), // 1 ETH
+            gas_limit: 100000,
+            data: Bytes::from(vec![0xde, 0xad, 0xbe, 0xef]),
+            l2_block_number: 12345,
+            message_hash: B256::from([0xab; 32]),
+        };
+
+        // Build the proof struct (same as finalize_withdrawal does)
+        let proof = IL1StandardBridge::WithdrawalProof {
+            nonce: withdrawal.nonce,
+            sender: withdrawal.sender,
+            target: withdrawal.target,
+            value: withdrawal.value,
+            gasLimit: withdrawal.gas_limit,
+            data: withdrawal.data.clone(),
+            l2BlockNumber: withdrawal.l2_block_number,
+            messageHash: withdrawal.message_hash,
+        };
+
+        // Verify fields match
+        assert_eq!(proof.nonce, 42);
+        assert_eq!(proof.sender, Address::repeat_byte(0x01));
+        assert_eq!(proof.target, Address::repeat_byte(0x02));
+        assert_eq!(proof.value, U256::from(1_000_000_000_000_000_000u128));
+        assert_eq!(proof.gasLimit, 100000);
+        assert_eq!(proof.l2BlockNumber, 12345);
+        assert_eq!(proof.messageHash, B256::from([0xab; 32]));
     }
 }

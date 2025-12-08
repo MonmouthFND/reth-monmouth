@@ -57,6 +57,11 @@ pub struct SequencerConfig {
     pub enable_compression: bool,
     /// L1 client configuration (optional - if not set, L1 submission is disabled)
     pub l1_client_config: Option<L1ClientConfig>,
+    /// L2 RPC URL for sending deposit crediting transactions (e.g., "http://127.0.0.1:8545")
+    pub l2_rpc_url: Option<String>,
+    /// Bridge account private key for crediting deposits on L2
+    /// This account should be pre-funded in genesis
+    pub bridge_private_key: Option<String>,
 }
 
 impl Default for SequencerConfig {
@@ -70,6 +75,8 @@ impl Default for SequencerConfig {
             max_batch_size: 100,
             enable_compression: true,
             l1_client_config: None,
+            l2_rpc_url: None,
+            bridge_private_key: None,
         }
     }
 }

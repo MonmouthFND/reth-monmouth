@@ -62,6 +62,20 @@ pub struct MonmouthNodeArgs {
     )]
     pub l1_deposit_poll_interval: u64,
 
+    #[arg(
+        long,
+        env = "L2_RPC_URL",
+        help = "L2 RPC URL for deposit crediting (e.g., http://127.0.0.1:8545)"
+    )]
+    pub l2_rpc_url: Option<String>,
+
+    #[arg(
+        long,
+        env = "BRIDGE_PRIVATE_KEY",
+        help = "Bridge account private key for crediting deposits on L2"
+    )]
+    pub bridge_private_key: Option<String>,
+
     #[arg(long, help = "Enable ExEx host service")]
     pub enable_exex_host: bool,
 
@@ -154,6 +168,10 @@ impl MonmouthNodeArgs {
                 config.l1_client_config = Some(l1_config);
             }
         }
+
+        // Set L2 deposit processing config
+        config.l2_rpc_url = self.l2_rpc_url.clone();
+        config.bridge_private_key = self.bridge_private_key.clone();
 
         config
     }

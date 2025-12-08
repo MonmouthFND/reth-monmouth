@@ -43,6 +43,7 @@ reth-tasks.workspace = true
 reth-transaction-pool.workspace = true
 
 # Alloy
+alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 
 # Serialization
