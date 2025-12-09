@@ -1,8 +1,11 @@
 use crate::config::SequencerConfig;
 use crate::l1_client::L1Client;
+use crate::state_provider::StateRootProvider;
 use alloy_consensus::Transaction;
 use alloy_primitives::B256;
-use monmouth_primitives::{MessageQueue, SequencerBatch, WithdrawalRequest};
+use monmouth_primitives::{
+    DepositRequest, L2Message, L2MessageType, MessageQueue, SequencerBatch, WithdrawalRequest,
+};
 use parking_lot::RwLock;
 use reth_primitives::TransactionSigned;
 use std::sync::Arc;
@@ -24,7 +27,12 @@ pub struct L2Sequencer {
     block_producer_handle: Option<tokio::task::JoinHandle<()>>,
     batch_submitter_handle: Option<tokio::task::JoinHandle<()>>,
     deposit_poller_handle: Option<tokio::task::JoinHandle<()>>,
+    deposit_processor_handle: Option<tokio::task::JoinHandle<()>>,
     shutdown_tx: Option<mpsc::Sender<()>>,
+    /// Counter for processed deposits
+    processed_deposits: Arc<RwLock<u64>>,
+    /// State provider for querying real state roots from the blockchain
+    state_provider: Option<Arc<dyn StateRootProvider>>,
 }
 
 impl L2Sequencer {
@@ -40,8 +48,17 @@ impl L2Sequencer {
             block_producer_handle: None,
             batch_submitter_handle: None,
             deposit_poller_handle: None,
+            deposit_processor_handle: None,
             shutdown_tx: None,
+            processed_deposits: Arc::new(RwLock::new(0)),
+            state_provider: None,
         }
+    }
+
+    /// Set the state provider for querying real state roots from the blockchain
+    pub fn with_state_provider(mut self, provider: Arc<dyn StateRootProvider>) -> Self {
+        self.state_provider = Some(provider);
+        self
     }
 
     /// Create a new sequencer with L1 client for batch submission
@@ -112,6 +129,7 @@ impl L2Sequencer {
         let batch_index = self.batch_index.clone();
         let parent_batch_hash = self.parent_batch_hash.clone();
         let current_l1_for_batch = self.current_l1_block.clone();
+        let state_provider = self.state_provider.clone();
 
         let batch_submitter = tokio::spawn(async move {
             let mut interval = interval(config2.batch_submission_frequency);
@@ -125,6 +143,7 @@ impl L2Sequencer {
                             &batch_index,
                             &parent_batch_hash,
                             &current_l1_for_batch,
+                            &state_provider,
                         ).await;
                     }
                     _ = shutdown_rx2.recv() => {
@@ -141,6 +160,7 @@ impl L2Sequencer {
         let (shutdown_tx3, mut shutdown_rx3) = mpsc::channel(1);
         if let Some(l1_client) = &self.l1_client {
             let l1 = l1_client.clone();
+            let mq = self.message_queue.clone();
             let poll_interval = self
                 .config
                 .l1_client_config
@@ -154,7 +174,7 @@ impl L2Sequencer {
                 loop {
                     tokio::select! {
                         _ = interval.tick() => {
-                            Self::poll_l1_deposits(&l1).await;
+                            Self::poll_l1_deposits(&l1, &mq).await;
                         }
                         _ = shutdown_rx3.recv() => {
                             info!("Deposit poller shutting down");
@@ -167,9 +187,38 @@ impl L2Sequencer {
             self.deposit_poller_handle = Some(deposit_poller);
         }
 
+        // Set up deposit processor to credit deposits on L2
+        let (shutdown_tx4, mut shutdown_rx4) = mpsc::channel(1);
+        let mq_processor = self.message_queue.clone();
+        let processed_deposits = self.processed_deposits.clone();
+        let config_processor = self.config.clone();
+
+        let deposit_processor = tokio::spawn(async move {
+            let mut interval = interval(std::time::Duration::from_secs(2));
+
+            loop {
+                tokio::select! {
+                    _ = interval.tick() => {
+                        Self::process_pending_deposits(
+                            &mq_processor,
+                            &processed_deposits,
+                            &config_processor,
+                        ).await;
+                    }
+                    _ = shutdown_rx4.recv() => {
+                        info!("Deposit processor shutting down");
+                        break;
+                    }
+                }
+            }
+        });
+
+        self.deposit_processor_handle = Some(deposit_processor);
+
         Ok(SequencerHandle {
             shutdown_tx: shutdown_tx2,
             shutdown_tx_deposit: shutdown_tx3,
+            shutdown_tx_processor: shutdown_tx4,
             pending_transactions: self.pending_transactions.clone(),
         })
     }
@@ -217,6 +266,7 @@ impl L2Sequencer {
         batch_index: &Arc<RwLock<u64>>,
         parent_batch_hash: &Arc<RwLock<B256>>,
         current_l1: &Arc<RwLock<(u64, B256)>>,
+        state_provider: &Option<Arc<dyn StateRootProvider>>,
     ) {
         debug!("Preparing batch for L1 submission");
 
@@ -268,6 +318,19 @@ impl L2Sequencer {
         let parent_hash = *parent_batch_hash.read();
         let (epoch_num, epoch_hash) = *current_l1.read();
 
+        // Get the real state root from the blockchain provider, or fall back to ZERO
+        let state_root = state_provider
+            .as_ref()
+            .and_then(|p| p.latest_state_root())
+            .unwrap_or_else(|| {
+                debug!("No state provider available, using B256::ZERO for state root");
+                B256::ZERO
+            });
+
+        if state_root != B256::ZERO {
+            info!("Using real state root from blockchain: {:?}", state_root);
+        }
+
         // Build the batch
         let batch = SequencerBatch {
             batch_index: current_index,
@@ -278,7 +341,7 @@ impl L2Sequencer {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs(),
-            state_root: B256::ZERO, // Would be computed from actual state
+            state_root, // Real state root from blockchain provider
             sequencer_address: alloy_primitives::Address::ZERO, // Would be from config
             transactions: Vec::new(), // Would include actual transactions
             withdrawals,
@@ -303,6 +366,30 @@ impl L2Sequencer {
                     .await
                 {
                     warn!("Failed to commit state root: {}", e);
+                } else {
+                    // State root committed successfully, now finalize any withdrawals
+                    if !batch.withdrawals.is_empty() {
+                        info!(
+                            "Finalizing {} withdrawals from batch {}",
+                            batch.withdrawals.len(),
+                            batch.batch_index
+                        );
+
+                        let results = client
+                            .finalize_withdrawals(&batch.withdrawals, batch.batch_index)
+                            .await;
+
+                        for (nonce, result) in results {
+                            match result {
+                                Ok(tx_hash) => {
+                                    info!("Withdrawal {} finalized on L1: {:?}", nonce, tx_hash);
+                                }
+                                Err(e) => {
+                                    warn!("Failed to finalize withdrawal {}: {}", nonce, e);
+                                }
+                            }
+                        }
+                    }
                 }
             }
             Err(e) => {
@@ -311,8 +398,8 @@ impl L2Sequencer {
         }
     }
 
-    /// Poll L1 for new deposits
-    async fn poll_l1_deposits(l1_client: &L1Client) {
+    /// Poll L1 for new deposits and enqueue them for processing
+    async fn poll_l1_deposits(l1_client: &L1Client, message_queue: &MessageQueue) {
         let last_scanned = l1_client.get_last_scanned_block().await;
 
         let current_block = match l1_client.get_block_number().await {
@@ -348,21 +435,103 @@ impl L2Sequencer {
                         "Found {} deposits from L1 blocks {}-{}",
                         deposits.len(),
                         from_block,
-                        current_block
+                        to_block
                     );
-                    // TODO: Process deposits and inject into L2 state
-                    // For now just log them
-                    for deposit in &deposits {
-                        debug!(
-                            "Deposit: {} ETH from {:?} to {:?}",
-                            deposit.value, deposit.from, deposit.to
-                        );
+
+                    // Convert deposits to L2Messages and enqueue them
+                    for deposit in deposits {
+                        let l2_message = Self::deposit_to_l2_message(&deposit);
+
+                        match message_queue.enqueue(l2_message.clone()) {
+                            Ok(hash) => {
+                                info!(
+                                    "Queued deposit: {} wei from {:?} to {:?} (hash: {:?})",
+                                    deposit.value, deposit.from, deposit.to, hash
+                                );
+                            }
+                            Err(e) => {
+                                // Likely duplicate deposit (already processed)
+                                debug!(
+                                    "Deposit not queued (possibly duplicate): {} - {}",
+                                    deposit.from, e
+                                );
+                            }
+                        }
                     }
+
+                    info!(
+                        "Total pending deposits in queue: {}",
+                        message_queue.deposit_count()
+                    );
                 }
             }
             Err(e) => {
                 warn!("Failed to poll deposits: {}", e);
             }
+        }
+    }
+
+    /// Process pending deposits by dequeuing them and crediting on L2
+    async fn process_pending_deposits(
+        message_queue: &MessageQueue,
+        processed_deposits: &Arc<RwLock<u64>>,
+        config: &SequencerConfig,
+    ) {
+        // Check if there are pending deposits
+        let pending = message_queue.deposit_count();
+        if pending == 0 {
+            return;
+        }
+
+        debug!("Processing {} pending deposits", pending);
+
+        // Process each deposit
+        while let Some(deposit) = message_queue.dequeue_deposit() {
+            info!(
+                "Processing deposit: {} wei from {:?} to {:?} (nonce: {})",
+                deposit.value, deposit.sender, deposit.recipient, deposit.nonce
+            );
+
+            // For now, log the deposit as processed
+            // In production, this would:
+            // 1. Create a deposit transaction using the bridge private key
+            // 2. Send it to the L2 via RPC
+            // 3. Wait for inclusion in a block
+            if config.l2_rpc_url.is_some() && config.bridge_private_key.is_some() {
+                // TODO: Actually send the deposit crediting transaction
+                // This requires creating a transaction that credits the deposit recipient
+                // with the deposited value from the bridge account
+                info!(
+                    "Would send deposit tx: {} wei to {:?}",
+                    deposit.value, deposit.recipient
+                );
+            }
+
+            // Increment processed count
+            *processed_deposits.write() += 1;
+
+            info!(
+                "Deposit {} processed (total: {})",
+                deposit.nonce,
+                *processed_deposits.read()
+            );
+        }
+    }
+
+    /// Convert a DepositRequest from L1 to an L2Message for processing
+    fn deposit_to_l2_message(deposit: &DepositRequest) -> L2Message {
+        L2Message {
+            msg_type: L2MessageType::Deposit,
+            sender: deposit.from,
+            recipient: deposit.to,
+            value: deposit.mint, // Use mint value for L2 crediting
+            data: deposit.data.clone(),
+            // Create unique nonce from L1 block + log index
+            nonce: deposit.l1_block_number * 1_000_000 + deposit.log_index,
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
         }
     }
 
@@ -393,6 +562,10 @@ impl L2Sequencer {
         if let Some(handle) = self.deposit_poller_handle.take() {
             let _ = handle.await;
         }
+
+        if let Some(handle) = self.deposit_processor_handle.take() {
+            let _ = handle.await;
+        }
     }
 }
 
@@ -400,6 +573,7 @@ impl L2Sequencer {
 pub struct SequencerHandle {
     shutdown_tx: mpsc::Sender<()>,
     shutdown_tx_deposit: mpsc::Sender<()>,
+    shutdown_tx_processor: mpsc::Sender<()>,
     pending_transactions: Arc<RwLock<Vec<TransactionSigned>>>,
 }
 
@@ -415,5 +589,6 @@ impl SequencerHandle {
     pub async fn shutdown(self) {
         let _ = self.shutdown_tx.send(()).await;
         let _ = self.shutdown_tx_deposit.send(()).await;
+        let _ = self.shutdown_tx_processor.send(()).await;
     }
 }

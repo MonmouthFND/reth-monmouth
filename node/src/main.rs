@@ -2,7 +2,7 @@ use clap::Parser;
 use monmouth_engine::{L1Client, L2Sequencer};
 use monmouth_exex_host::ExExHost;
 use monmouth_node::args::MonmouthNodeArgs;
-use monmouth_node::MonmouthNode;
+use monmouth_node::{create_state_provider, MonmouthNode};
 use reth::cli::Cli;
 use reth_ethereum_cli::chainspec::EthereumChainSpecParser;
 use reth_node_builder::NodeHandle;
@@ -69,17 +69,27 @@ fn main() {
             // Launch the node
             // When in sequencer mode, use EthereumNode which properly integrates with --dev mode
             // MonmouthNode's custom EVM precompiles (currently stubs) are not yet needed for testnet
-            let node_exit_future = if args.sequencer {
+            let (node_exit_future, state_provider) = if args.sequencer {
                 info!(target: "monmouth", "Using EthereumNode for sequencer mode (dev mode compatible)");
                 info!(target: "monmouth", "Note: Custom precompiles disabled in this mode");
-                let NodeHandle { node: _, node_exit_future } =
+                let NodeHandle { node, node_exit_future } =
                     builder.node(EthereumNode::default()).launch().await?;
-                node_exit_future
+
+                // Create state provider from the node's blockchain provider
+                let provider = create_state_provider(node.provider().clone());
+                info!(target: "monmouth", "Created state provider for real state roots");
+
+                (node_exit_future, Some(provider))
             } else {
                 info!(target: "monmouth", "Using MonmouthNode with custom precompiles");
-                let NodeHandle { node: _, node_exit_future } =
+                let NodeHandle { node, node_exit_future } =
                     builder.node(MonmouthNode::default()).launch().await?;
-                node_exit_future
+
+                // Create state provider from the node's blockchain provider
+                let provider = create_state_provider(node.provider().clone());
+                info!(target: "monmouth", "Created state provider for real state roots");
+
+                (node_exit_future, Some(provider))
             };
 
             // Start L1 client and batch submission if in sequencer mode with L1 config
@@ -95,9 +105,16 @@ fn main() {
                                 info!(target: "monmouth", "  - SequencerInbox: {:?}", l1_client.sequencer_inbox);
                                 info!(target: "monmouth", "  - Bridge: {:?}", l1_client.bridge);
 
-                                // Create sequencer with L1 client and start it
-                                let mut sequencer = L2Sequencer::new(seq_config.clone())
+                                // Create sequencer with L1 client and state provider
+                                let sequencer = L2Sequencer::new(seq_config.clone())
                                     .with_l1_client(l1_client);
+
+                                // Add state provider for real state roots if available
+                                let mut sequencer = if let Some(ref provider) = state_provider {
+                                    sequencer.with_state_provider(provider.clone())
+                                } else {
+                                    sequencer
+                                };
 
                                 match sequencer.start().await {
                                     Ok(handle) => {

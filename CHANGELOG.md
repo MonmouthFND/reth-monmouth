@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- L1 withdrawal finalization in L1Client (`engine/src/l1_client.rs`)
+  - `finalize_withdrawal(withdrawal, batch_index)` - Finalizes a single withdrawal on L1
+  - `is_withdrawal_finalized(message_hash)` - Checks if withdrawal already finalized
+  - `finalize_withdrawals(withdrawals, batch_index)` - Batch finalization helper
+- Updated IL1StandardBridge interface with `WithdrawalProof` struct and `finalizeWithdrawal` function
+- Automatic withdrawal finalization in sequencer batch flow (`engine/src/sequencer.rs`)
+  - After state root commitment, withdrawals included in batch are finalized on L1
+  - Per-withdrawal logging of finalization success/failure
 - Sepolia testnet deployment with L1 contracts (Trusted Sequencer model)
   - SequencerInbox contract for batch submission
   - StateCommitmentChain contract for L2 state root commitments
@@ -25,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--l1-bridge` (env: L1_BRIDGE_ADDRESS) - Contract address
   - `--l1-cross-domain-messenger` (env: L1_CROSS_DOMAIN_MESSENGER) - Contract address
   - `--l1-deposit-poll-interval` - Deposit monitoring interval
+- CLI arguments for L2 deposit processing
+  - `--l2-rpc-url` (env: L2_RPC_URL) - L2 RPC URL for deposit crediting
+  - `--bridge-private-key` (env: BRIDGE_PRIVATE_KEY) - Bridge account for crediting deposits
+- Deposit processor background task in sequencer (`engine/src/sequencer.rs`)
+  - Polls MessageQueue for pending deposits every 2 seconds
+  - Logs deposit processing with nonce, sender, recipient, value
+  - Prepares infrastructure for sending L2 crediting transactions
 - Engine driver module and standalone binary (`engine-driver`)
   - JWT authentication for Engine API
   - Configurable block production interval
