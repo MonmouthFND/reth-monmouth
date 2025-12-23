@@ -4,13 +4,46 @@
   "description": "Agent wallet SDK for Monmouth - built on Porto",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "workspaces": [
     "test-app"
   ],
   "scripts": {
     "dev": "cd test-app && bun run dev",
-    "test": "cd test-app && bun run test",
-    "build": "cd test-app && bun run build"
+    "build": "tsc",
+    "build:app": "cd test-app && bun run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:app": "cd test-app && bun run test",
+    "test:all": "bun run test && bun run test:app",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "typescript": "~5.6.2",
+    "vitest": "^2.1.8"
+  },
+  "peerDependencies": {
+    "porto": "^0.2.37",
+    "wagmi": "^2.14.11"
   },
   "keywords": [
     "monmouth",
@@ -18,7 +51,9 @@
     "ai-agents",
     "porto",
     "eip-7702",
-    "wagmi"
+    "wagmi",
+    "guardrails",
+    "agent-wallet"
   ],
   "license": "MIT"
 }
