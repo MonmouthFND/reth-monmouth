@@ -1,0 +1,24 @@
+{
+  "name": "@monmouth/wallet-sdk",
+  "version": "0.1.0",
+  "description": "Agent wallet SDK for Monmouth - built on Porto",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "test-app"
+  ],
+  "scripts": {
+    "dev": "cd test-app && bun run dev",
+    "test": "cd test-app && bun run test",
+    "build": "cd test-app && bun run build"
+  },
+  "keywords": [
+    "monmouth",
+    "wallet",
+    "ai-agents",
+    "porto",
+    "eip-7702",
+    "wagmi"
+  ],
+  "license": "MIT"
+}
