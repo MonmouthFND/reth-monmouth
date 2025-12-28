@@ -7,7 +7,8 @@
  * - Agent identity management
  * - Spending guardrails (per-transaction, daily limits, allowlists)
  * - Session management
- * - Activity logging (Phase 2)
+ * - Activity logging with localStorage persistence
+ * - Memory client for ExEx integration (stub)
  * - x402 payment protocol (Phase 3)
  *
  * @example
@@ -57,13 +58,41 @@ export {
 } from './guardrails'
 export type { PermissionTemplate } from './guardrails'
 
-// Types
+// Memory Layer
+export {
+  ActivityLog,
+  createActivityLog,
+  getActivityLog,
+  MemoryClient,
+  createMemoryClient,
+} from './memory'
+export type {
+  ActivityLogEntry,
+  ActivityActionType,
+  MemoryClientConfig,
+  SearchRequest,
+  SearchResult,
+  ConnectionState,
+  SyncStatus,
+  TransactionActivityData,
+  SignatureActivityData,
+  DecisionActivityData,
+  ErrorActivityData,
+  EpisodicMemory,
+  SemanticMemory,
+  ActivityQueryOptions,
+  SyncRequest,
+  SyncResponse,
+  SyncConflict,
+  MemoryEvent,
+  MemoryEventListener,
+} from './memory'
+
+// Core Types
 export type {
   AgentIdentity,
   AgentType,
   SpendingPolicy,
-  ActivityLogEntry,
-  ActivityActionType,
   PolicyValidationResult,
   TransactionIntent,
   WalletState,
