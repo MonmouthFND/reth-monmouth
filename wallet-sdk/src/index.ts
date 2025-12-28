@@ -88,6 +88,31 @@ export type {
   MemoryEventListener,
 } from './memory'
 
+// Payments (x402)
+export {
+  X402Client,
+  createX402Client,
+  X402Error,
+  X402_HEADERS,
+  X402_PAYMENT_TYPES,
+  KNOWN_TOKENS,
+  parsePaymentRequired,
+  serializePaymentHeader,
+  deserializePaymentHeader,
+  getTokenAddress,
+  isNativeToken,
+} from './payments'
+export type {
+  PaymentToken,
+  PaymentRequired,
+  PaymentPayload,
+  PaymentReceipt,
+  X402ErrorCode,
+  X402ClientConfig,
+  X402FetchResult,
+  X402PaymentDomain,
+} from './payments'
+
 // Core Types
 export type {
   AgentIdentity,
