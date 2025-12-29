@@ -4,39 +4,48 @@
  * Agent-aware wallet layer built on Porto (EIP-7702)
  *
  * Features:
- * - Agent identity management
+ * - Agent identity management with DID support
  * - Spending guardrails (per-transaction, daily limits, allowlists)
  * - Session management
  * - Activity logging with localStorage persistence
  * - Memory client for ExEx integration (stub)
- * - x402 payment protocol (Phase 3)
+ * - x402 payment protocol for API payments
+ * - Payment routing (x402, direct, escrow)
+ * - Escrow-based commerce for agent-to-agent transactions
  *
  * @example
  * ```typescript
- * import { createMonmouthWallet, PermissionTemplates } from '@monmouth/wallet-sdk'
+ * import { createMonmouthWallet, PaymentRouter, createAgentIdentity } from '@monmouth/wallet-sdk'
  *
  * const wallet = createMonmouthWallet({
  *   identity: {
- *     agentId: 'my-research-agent',
- *     agentType: 'research',
- *     name: 'Research Assistant',
- *   },
- *   policy: {
- *     maxPerTransaction: 0.05 ETH, // Custom override
+ *     agentId: 'my-commerce-agent',
+ *     agentType: 'commerce',
+ *     name: 'Shopping Agent',
  *   },
  * })
  *
- * // Validate before sending
- * const result = wallet.prepareTransaction({
- *   to: '0x...',
- *   value: parseEther('0.01'),
+ * // Initialize decentralized identity
+ * const identity = createAgentIdentity(wallet)
+ * await identity.initialize()
+ *
+ * // Create payment router for multi-protocol payments
+ * const router = new PaymentRouter(wallet, { x402Client, escrowClient })
+ *
+ * // Pay for API access (routes to x402)
+ * await router.pay({
+ *   recipient: 'https://api.example.com',
+ *   amount: parseEther('0.01'),
+ *   purpose: 'api_access',
  * })
  *
- * if (result.allowed) {
- *   // Use wagmi to send the transaction
- *   const hash = await sendTransaction(...)
- *   wallet.recordTransaction(hash, parseEther('0.01'))
- * }
+ * // Pay for service with escrow
+ * await router.pay({
+ *   recipient: serviceAgent,
+ *   amount: parseEther('0.5'),
+ *   purpose: 'escrow',
+ *   metadata: { description: 'Data analysis' },
+ * })
  * ```
  */
 
@@ -88,7 +97,7 @@ export type {
   MemoryEventListener,
 } from './memory'
 
-// Payments (x402)
+// Payments (x402 + Router)
 export {
   X402Client,
   createX402Client,
@@ -101,6 +110,8 @@ export {
   deserializePaymentHeader,
   getTokenAddress,
   isNativeToken,
+  PaymentRouter,
+  createPaymentRouter,
 } from './payments'
 export type {
   PaymentToken,
@@ -111,7 +122,60 @@ export type {
   X402ClientConfig,
   X402FetchResult,
   X402PaymentDomain,
+  PaymentProtocol,
+  PaymentPurpose,
+  PaymentRequest,
+  PaymentResult,
+  ProtocolDetection,
+  PaymentRouterConfig,
+  PaymentRouterEvent,
+  PaymentRouterEventListener,
 } from './payments'
+
+// Identity (DID)
+export {
+  AgentIdentityManager,
+  createAgentIdentity,
+  IdentityError,
+  IDENTITY_SIGNATURE_TYPES,
+} from './identity'
+export type {
+  DID,
+  AgentCapability,
+  IdentityDocument,
+  SignedIdentity,
+  VerificationResult,
+  AgentIdentityConfig,
+  IdentityEvent,
+  IdentityEventListener,
+  IdentityErrorCode,
+  IdentitySignatureDomain,
+} from './identity'
+
+// Commerce (Escrow)
+export {
+  EscrowClient,
+  createEscrowClient,
+  EscrowError,
+  generateEscrowId,
+  isEscrowActive,
+  isEscrowExpired,
+  getAvailableActions,
+} from './commerce'
+export type {
+  EscrowId,
+  EscrowState,
+  CreateEscrowParams,
+  EscrowRecord,
+  EscrowResult,
+  EscrowStatus,
+  DisputeParams,
+  DisputeResolution,
+  EscrowClientConfig,
+  EscrowEvent,
+  EscrowEventListener,
+  EscrowErrorCode,
+} from './commerce'
 
 // Core Types
 export type {

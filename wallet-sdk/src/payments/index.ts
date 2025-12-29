@@ -1,9 +1,12 @@
 /**
- * Payments module - x402 protocol integration
+ * Payments module - x402 protocol and payment routing
  */
 
 // X402 Client
 export { X402Client, createX402Client } from './X402Client'
+
+// Payment Router
+export { PaymentRouter, createPaymentRouter } from './PaymentRouter'
 
 // Types
 export {
@@ -28,3 +31,14 @@ export type {
   X402FetchResult,
   X402PaymentDomain,
 } from './types'
+
+export type {
+  PaymentProtocol,
+  PaymentPurpose,
+  PaymentRequest,
+  PaymentResult,
+  ProtocolDetection,
+  PaymentRouterConfig,
+  PaymentRouterEvent,
+  PaymentRouterEventListener,
+} from './PaymentRouter'
