@@ -1,3 +1,7 @@
+/* ============================================
+   Monmouth Wallet SDK - Test App Styles
+   ============================================ */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,23 +14,80 @@ body {
   color: #fafafa;
   min-height: 100vh;
   padding: 2rem;
+  line-height: 1.5;
 }
 
+/* ============================================
+   Layout
+   ============================================ */
+
 .container {
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+
 h1 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   margin-bottom: 0.5rem;
   color: #22c55e;
+}
+
+h2 {
+  font-size: 1rem;
+  color: #a1a1aa;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+h4 {
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
   color: #71717a;
   margin-bottom: 2rem;
 }
+
+/* ============================================
+   App Header & Footer
+   ============================================ */
+
+.app-header {
+  margin-bottom: 2rem;
+}
+
+.app-footer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #27272a;
+  text-align: center;
+  color: #52525b;
+  font-size: 0.875rem;
+}
+
+/* ============================================
+   Cards
+   ============================================ */
 
 .card {
   background: #18181b;
@@ -36,11 +97,117 @@ h1 {
   margin-bottom: 1rem;
 }
 
-.card h2 {
-  font-size: 1rem;
-  color: #a1a1aa;
-  margin-bottom: 1rem;
+/* ============================================
+   Buttons
+   ============================================ */
+
+button {
+  background: #22c55e;
+  color: #000;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.15s;
 }
+
+button:hover {
+  background: #16a34a;
+}
+
+button:disabled {
+  background: #27272a;
+  color: #71717a;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #22c55e;
+  color: #000;
+}
+
+.btn-secondary {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.btn-secondary:hover {
+  background: #3f3f46;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-text {
+  background: transparent;
+  color: #a1a1aa;
+  padding: 0.5rem;
+}
+
+.btn-text:hover {
+  color: #fafafa;
+  background: transparent;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-icon {
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+}
+
+.btn-icon:hover {
+  background: #27272a;
+}
+
+/* ============================================
+   Form Inputs
+   ============================================ */
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.75rem;
+  background: #09090b;
+  border: 1px solid #27272a;
+  border-radius: 0.375rem;
+  color: #fafafa;
+  font-size: 0.875rem;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #22c55e;
+}
+
+input::placeholder {
+  color: #52525b;
+}
+
+label {
+  display: block;
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   Status Indicators
+   ============================================ */
 
 .status {
   display: flex;
@@ -76,24 +243,615 @@ h1 {
   margin-bottom: 0.5rem;
 }
 
-button {
-  background: #22c55e;
-  color: #000;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.375rem;
+/* ============================================
+   Initialize Card
+   ============================================ */
+
+.init-subtitle {
+  color: #71717a;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.init-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.init-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.init-type-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.init-type-btn {
+  background: #27272a;
+  color: #a1a1aa;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.init-type-btn.active {
+  background: #22c55e20;
+  color: #22c55e;
+  border: 1px solid #22c55e;
+}
+
+.init-btn {
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   Identity Card
+   ============================================ */
+
+.identity-placeholder {
+  color: #52525b;
+  font-style: italic;
+}
+
+.identity-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.identity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.identity-label {
+  font-size: 0.75rem;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.identity-value {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #fafafa;
+}
+
+.identity-value.warning {
+  color: #f59e0b;
+}
+
+.identity-did {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.identity-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: #22c55e20;
+  color: #22c55e;
+  border-radius: 9999px;
+  font-size: 0.75rem;
   font-weight: 600;
-  cursor: pointer;
-  margin-right: 0.5rem;
+  text-transform: uppercase;
+}
+
+.identity-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.capability-tag {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: #27272a;
+  color: #a1a1aa;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.identity-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #27272a;
+}
+
+/* ============================================
+   Policy Card
+   ============================================ */
+
+.policy-placeholder {
+  color: #52525b;
+  font-style: italic;
+}
+
+.policy-template-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.policy-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.policy-stat {
+  text-align: center;
+}
+
+.policy-stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-bottom: 0.25rem;
+}
+
+.policy-stat-value {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fafafa;
+}
+
+.policy-stat-value.exceeded {
+  color: #ef4444;
+}
+
+.policy-progress {
+  margin-bottom: 1.5rem;
+}
+
+.policy-progress-bar {
+  height: 8px;
+  background: #27272a;
+  border-radius: 4px;
+  overflow: hidden;
   margin-bottom: 0.5rem;
 }
 
-button:hover {
-  background: #16a34a;
+.policy-progress-fill {
+  height: 100%;
+  background: #22c55e;
+  transition: width 0.3s;
 }
 
-button:disabled {
-  background: #27272a;
+.policy-progress-fill.exceeded {
+  background: #ef4444;
+}
+
+.policy-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
   color: #71717a;
-  cursor: not-allowed;
+}
+
+.policy-section-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.policy-template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.policy-template-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.75rem;
+  background: #27272a;
+  border: 2px solid transparent;
+  text-align: left;
+}
+
+.policy-template-btn .template-name {
+  font-weight: 600;
+  color: #fafafa;
+  font-size: 0.875rem;
+}
+
+.policy-template-btn .template-limits {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.policy-template-btn .template-desc {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+.policy-custom {
+  border-top: 1px solid #27272a;
+  padding-top: 1rem;
+}
+
+.policy-custom-form {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.policy-input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   Activity Log Card
+   ============================================ */
+
+.activity-placeholder {
+  color: #52525b;
+  font-style: italic;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.activity-header h2 {
+  margin-bottom: 0;
+}
+
+.activity-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.activity-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-btn {
+  padding: 0.375rem 0.75rem;
+  background: #27272a;
+  color: #a1a1aa;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+
+.filter-btn.active {
+  background: #27272a;
+  color: #fafafa;
+  border-color: #52525b;
+}
+
+.activity-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #27272a;
+  border-radius: 0.375rem;
+}
+
+.activity-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #52525b;
+}
+
+.activity-entry {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #27272a;
+  font-size: 0.875rem;
+  align-items: center;
+}
+
+.activity-entry:last-child {
+  border-bottom: none;
+}
+
+.activity-time {
+  font-family: monospace;
+  color: #71717a;
+  font-size: 0.75rem;
+}
+
+.activity-type {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.activity-data {
+  color: #a1a1aa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+}
+
+.activity-count {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+/* ============================================
+   X402 Demo Card
+   ============================================ */
+
+.x402-placeholder {
+  color: #52525b;
+  font-style: italic;
+}
+
+.x402-subtitle {
+  color: #71717a;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.x402-demos {
+  margin-bottom: 1.5rem;
+}
+
+.x402-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #71717a;
+  margin-bottom: 0.5rem;
+}
+
+.x402-demo-btns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.x402-demo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: #27272a;
+  text-align: center;
+}
+
+.x402-demo-btn .demo-desc {
+  font-size: 0.75rem;
+  color: #fafafa;
+}
+
+.x402-demo-btn .demo-cost {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.x402-input-group {
+  margin-bottom: 1rem;
+}
+
+.x402-input {
+  font-family: monospace;
+}
+
+.x402-amount {
+  max-width: 200px;
+}
+
+.x402-fetch-btn {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.x402-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1.5rem;
+}
+
+.x402-status.loading {
+  background: #27272a;
+}
+
+.x402-status.success {
+  background: #22c55e20;
+  border: 1px solid #22c55e40;
+}
+
+.x402-status.error {
+  background: #ef444420;
+  border: 1px solid #ef444440;
+}
+
+.x402-status .status-icon {
+  font-size: 1.25rem;
+}
+
+.x402-status .status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.x402-status .status-message {
+  color: #fafafa;
+}
+
+.x402-status .status-tx,
+.x402-status .status-response {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.x402-info {
+  background: #09090b;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid #27272a;
+}
+
+.x402-info ol {
+  margin-left: 1.25rem;
+  color: #a1a1aa;
+  font-size: 0.875rem;
+}
+
+.x402-info li {
+  margin-bottom: 0.25rem;
+}
+
+/* ============================================
+   Guardrail Alerts
+   ============================================ */
+
+.guardrail-alerts-container {
+  margin-bottom: 1rem;
+}
+
+.alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.alerts-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.guardrail-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #ef444420;
+  border: 1px solid #ef444440;
+}
+
+.guardrail-alert.warning {
+  background: #f59e0b20;
+  border-color: #f59e0b40;
+}
+
+.guardrail-alert.warning .alert-title {
+  color: #f59e0b;
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.alert-title {
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.alert-time {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+.alert-message {
+  color: #fafafa;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.alert-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  font-family: monospace;
+}
+
+.alert-dismiss {
+  background: transparent;
+  color: #71717a;
+  padding: 0.25rem;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.alert-dismiss:hover {
+  color: #fafafa;
+  background: transparent;
+}
+
+/* ============================================
+   Scrollbar
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
 }
