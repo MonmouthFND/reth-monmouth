@@ -177,7 +177,7 @@ export type {
   EscrowErrorCode,
 } from './commerce'
 
-// Core Types
+// Core Types (legacy EVM-specific)
 export type {
   AgentIdentity,
   AgentType,
@@ -192,3 +192,123 @@ export type {
   Hash,
   Hex,
 } from './types'
+
+// ============================================================
+// Multi-Chain Support (New)
+// ============================================================
+
+// Core - Universal types and interfaces
+export {
+  EVM_CHAINS,
+  SVM_CHAINS,
+  formatEscrowId,
+  parseEscrowId,
+  generateNonce,
+  validateX402Request,
+  X402_HEADERS as X402_UNIVERSAL_HEADERS,
+  // Utilities
+  addressEquals,
+  base58ToBytes,
+  bigIntReplacer,
+  bigIntReviver,
+  bytesToBase58,
+  bytesToHex,
+  createAddress,
+  createNativeToken,
+  createTokenAmount,
+  formatTokenAmount,
+  getFunctionSelector,
+  hexToBytes,
+  isContractDeployment,
+  isValidAddress as isValidUniversalAddress,
+  parseAddress,
+  parseTokenAmount,
+} from './core'
+
+export type {
+  // Types
+  ChainConfig,
+  ChainType,
+  TokenAmount,
+  TokenId,
+  TxHash,
+  TxReceipt,
+  TxResult,
+  TypedDataDomain,
+  TypedDataTypes,
+  UniversalAddress,
+  UniversalLog,
+  UniversalSignature,
+  UniversalTransaction,
+  // Adapter
+  AdapterConfig,
+  AdapterEvent,
+  AdapterEventListener,
+  AdapterFactory,
+  ChainAdapter,
+  ChainAdapterWithEvents,
+  // Escrow
+  CreateEscrowParams as UniversalCreateEscrowParams,
+  DisputeDetails,
+  EscrowAdapter,
+  EscrowAdapterFactory,
+  EscrowEvent as UniversalEscrowEvent,
+  EscrowEventListener as UniversalEscrowEventListener,
+  EscrowId as UniversalEscrowId,
+  EscrowState as UniversalEscrowState,
+  EscrowStatus as UniversalEscrowStatus,
+  // x402
+  X402Adapter,
+  X402AdapterFactory,
+  X402Event as UniversalX402Event,
+  X402EventListener as UniversalX402EventListener,
+  X402Payment as UniversalX402Payment,
+  X402PaymentRequest as UniversalX402PaymentRequest,
+  X402PaymentResult as UniversalX402PaymentResult,
+  X402ValidationOptions,
+} from './core'
+
+// Chain Adapters
+export {
+  EvmAdapter,
+  createEvmAdapter,
+  SolanaAdapter,
+  createSolanaAdapter,
+} from './adapters'
+
+export type {
+  EvmAdapterConfig,
+  SolanaAdapterConfig,
+  SolanaWalletAdapter,
+} from './adapters'
+
+// Multi-chain Agent Wallet
+export {
+  AgentWallet,
+  createAgentWallet,
+  DEFAULT_POLICIES,
+  AgentIdentityManager as MultiChainIdentityManager,
+  createAgentIdentityManager,
+} from './wallet'
+
+export type {
+  AgentIdentity as MultiChainAgentIdentity,
+  AgentIdentityConfig as MultiChainAgentIdentityConfig,
+  AgentType as MultiChainAgentType,
+  AgentWalletConfig,
+  PolicyValidationResult as MultiChainPolicyValidationResult,
+  SpendingPolicy as MultiChainSpendingPolicy,
+  TransactionIntent as MultiChainTransactionIntent,
+  WalletEvent as MultiChainWalletEvent,
+  WalletEventListener as MultiChainWalletEventListener,
+  WalletState as MultiChainWalletState,
+  // Identity
+  AgentCapability as MultiChainAgentCapability,
+  DID as MultiChainDID,
+  IdentityDocument as MultiChainIdentityDocument,
+  IdentityEvent as MultiChainIdentityEvent,
+  IdentityEventListener as MultiChainIdentityEventListener,
+  IdentityManagerConfig,
+  SignedIdentity as MultiChainSignedIdentity,
+  VerificationResult as MultiChainVerificationResult,
+} from './wallet'

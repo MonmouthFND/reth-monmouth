@@ -46,6 +46,79 @@ const DEFAULT_CONFIG: Required<Omit<X402ClientConfig, 'onPaymentRequired'>> = {
 }
 
 /**
+ * Check if URL is a demo/mock URL that should be simulated
+ * Only specific demo paths are intercepted - not all example.com URLs
+ */
+function isDemoUrl(url: string): boolean {
+  // Check for specific demo endpoints
+  const demoEndpoints = [
+    'api.example.com/market-data',
+    'api.example.com/ai-analysis',
+    'api.example.com/premium-feed',
+    'localhost:9999',
+  ]
+  return demoEndpoints.some(endpoint => url.includes(endpoint))
+}
+
+/**
+ * Generate simulated payment requirements for demo URLs
+ */
+function generateDemoPaymentRequired(url: string, chainId: number): {
+  paymentRequired: import('./types').PaymentRequired
+  mockResponseData: Record<string, unknown>
+} {
+  // Extract amount hint from URL or use default
+  let amount = BigInt(1e16) // 0.01 ETH default
+  let description = 'API access'
+  let mockResponseData: Record<string, unknown> = {}
+
+  if (url.includes('market-data')) {
+    amount = BigInt(1e15) // 0.001 ETH
+    description = 'Real-time market data access'
+    mockResponseData = {
+      timestamp: Date.now(),
+      markets: [
+        { symbol: 'ETH/USD', price: 2345.67, change24h: 2.5 },
+        { symbol: 'BTC/USD', price: 43567.89, change24h: 1.2 },
+        { symbol: 'SOL/USD', price: 98.76, change24h: -0.8 },
+      ],
+      source: 'Monmouth Demo API',
+    }
+  } else if (url.includes('ai-analysis')) {
+    amount = BigInt(1e16) // 0.01 ETH
+    description = 'AI-powered analysis'
+    mockResponseData = {
+      analysis: 'Based on current market conditions, ETH shows strong momentum with increasing on-chain activity.',
+      confidence: 0.85,
+      factors: ['On-chain volume', 'DEX activity', 'Whale movements'],
+      timestamp: Date.now(),
+    }
+  } else if (url.includes('premium-feed')) {
+    amount = BigInt(5e16) // 0.05 ETH
+    description = 'Premium data feed subscription'
+    mockResponseData = {
+      subscription: 'active',
+      expiresAt: Date.now() + 86400000, // 24 hours
+      features: ['Real-time prices', 'Order book depth', 'Trade history'],
+      rateLimit: '1000 req/min',
+    }
+  }
+
+  return {
+    paymentRequired: {
+      recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f5bE91' as `0x${string}`,
+      amount,
+      token: 'ETH',
+      chainId,
+      expiry: Math.floor(Date.now() / 1000) + 300, // 5 minutes
+      nonce: `demo-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      description,
+    },
+    mockResponseData,
+  }
+}
+
+/**
  * X402Client - Fetch wrapper with automatic x402 payment handling
  */
 export class X402Client {
@@ -110,6 +183,11 @@ export class X402Client {
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs)
 
     try {
+      // Check if this is a demo URL that should be simulated
+      if (isDemoUrl(url)) {
+        return this.handleDemoUrl(url)
+      }
+
       // Merge headers
       const headers = new Headers(options?.headers)
       for (const [key, value] of Object.entries(this.config.defaultHeaders)) {
@@ -378,6 +456,124 @@ export class X402Client {
     // Format as hex signature
     const hashHex = Math.abs(hash).toString(16).padStart(64, '0')
     return `0x${hashHex}${'0'.repeat(64)}${'1b'}` as Hex
+  }
+
+  /**
+   * Handle demo/mock URLs by simulating the x402 flow
+   * This allows the demo to work without real API endpoints
+   */
+  private async handleDemoUrl(url: string): Promise<X402FetchResult> {
+    // Get chain ID from wallet or default to Odyssey testnet
+    const chainId = 911867 // Porto Odyssey testnet
+
+    // Generate mock payment requirements based on URL
+    const { paymentRequired, mockResponseData } = generateDemoPaymentRequired(url, chainId)
+
+    // Log payment required event
+    this.logActivity('decision', {
+      event: 'payment_required',
+      url,
+      paymentRequired: {
+        recipient: paymentRequired.recipient,
+        amount: paymentRequired.amount.toString(),
+        token: paymentRequired.token,
+        chainId: paymentRequired.chainId,
+        description: paymentRequired.description,
+      },
+      demo: true,
+    })
+
+    // Check if auto-retry is enabled
+    if (!this.config.autoRetry) {
+      // Return a simulated 402 response
+      return {
+        response: new Response(JSON.stringify({ error: 'Payment Required' }), {
+          status: 402,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+        paymentMade: false,
+      }
+    }
+
+    // Validate against guardrails
+    const validation = this.validatePayment(paymentRequired)
+    if (!validation.allowed) {
+      this.logActivity('error', {
+        event: 'payment_rejected',
+        url,
+        reason: validation.reason,
+        rule: validation.violatedRule,
+        demo: true,
+      })
+      throw new X402Error(
+        'GUARDRAIL_REJECTED',
+        validation.reason || 'Payment rejected by guardrails',
+        { rule: validation.violatedRule }
+      )
+    }
+
+    // Check auto-approve limit
+    if (this.config.maxAutoApprove > 0n && paymentRequired.amount > this.config.maxAutoApprove) {
+      // Need explicit approval
+      if (this.config.onPaymentRequired) {
+        const approved = await this.config.onPaymentRequired(paymentRequired)
+        if (!approved) {
+          throw new X402Error('GUARDRAIL_REJECTED', 'Payment not approved by user')
+        }
+      } else {
+        throw new X402Error(
+          'GUARDRAIL_REJECTED',
+          `Payment amount ${paymentRequired.amount} exceeds auto-approve limit ${this.config.maxAutoApprove}`
+        )
+      }
+    }
+
+    // Create signed payment (simulated for demo)
+    const payment = await this.createPayment(paymentRequired)
+
+    // Record the spend (simulated - doesn't actually transfer funds)
+    this.wallet.recordTransaction(
+      `0x${'demo'.padStart(64, '0')}` as Hex,
+      paymentRequired.amount
+    )
+
+    // Log successful payment
+    this.logActivity('transaction', {
+      event: 'payment_made',
+      url,
+      payment: {
+        recipient: paymentRequired.recipient,
+        amount: paymentRequired.amount.toString(),
+        token: paymentRequired.token,
+      },
+      demo: true,
+    })
+
+    // Build receipt
+    const receipt: PaymentReceipt = {
+      paymentId: paymentRequired.nonce,
+      amount: paymentRequired.amount,
+      recipient: paymentRequired.recipient,
+      token: paymentRequired.token,
+      timestamp: Date.now(),
+    }
+
+    // Return simulated successful response with mock data
+    const mockResponse = new Response(JSON.stringify(mockResponseData), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Demo': 'true',
+        'X-Payment-Received': 'true',
+      },
+    })
+
+    return {
+      response: mockResponse,
+      paymentMade: true,
+      payment,
+      receipt,
+    }
   }
 
   /**
