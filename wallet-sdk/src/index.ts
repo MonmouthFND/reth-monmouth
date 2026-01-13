@@ -161,6 +161,10 @@ export {
   isEscrowActive,
   isEscrowExpired,
   getAvailableActions,
+  // Contract ABIs
+  MONMOUTH_ESCROW_ABI,
+  MONMOUTH_VERIFIER_ABI,
+  ESCROW_STATE,
 } from './commerce'
 export type {
   EscrowId,
@@ -175,6 +179,7 @@ export type {
   EscrowEvent,
   EscrowEventListener,
   EscrowErrorCode,
+  EscrowStateValue,
 } from './commerce'
 
 // Core Types (legacy EVM-specific)
@@ -312,3 +317,106 @@ export type {
   SignedIdentity as MultiChainSignedIdentity,
   VerificationResult as MultiChainVerificationResult,
 } from './wallet'
+
+// ============================================================
+// EIP-712 Signing (New)
+// ============================================================
+
+export {
+  EIP712Signer,
+  createEIP712Signer,
+  SigningError,
+  SIGNING_DOMAINS,
+  IDENTITY_TYPES as EIP712_IDENTITY_TYPES,
+  PAYMENT_TYPES as EIP712_PAYMENT_TYPES,
+  ESCROW_TYPES as EIP712_ESCROW_TYPES,
+  MONMOUTH_CHAIN_ID,
+  // Verification utilities
+  verifyIdentitySignature,
+  verifyPaymentSignature,
+  verifyIdentityOnChain,
+  verifyPaymentOnChain,
+  computeDomainSeparator,
+  computeIdentityStructHash,
+  computePaymentStructHash,
+  computeDigest,
+  VERIFIER_ABI,
+} from './signing'
+
+export type {
+  EIP712SignerConfig,
+  EIP712Domain,
+  IdentityMessage,
+  PaymentMessage,
+  EscrowCreateMessage,
+  EscrowActionMessage,
+  SignedData,
+  TypedDataSigner,
+  NonceManager,
+  SigningDomainName,
+  SigningErrorCode,
+} from './signing'
+
+// ============================================================
+// Token Registry (New)
+// ============================================================
+
+// Token Registry
+export {
+  TokenRegistry,
+  createTokenRegistry,
+  getTokenRegistry,
+  SolanaTokenRegistry,
+  createSolanaTokenRegistry,
+  createMainnetSolanaRegistry,
+  createDevnetSolanaRegistry,
+  TokenRegistryError,
+  // Constants
+  DEFAULT_TOKEN_LIST_URLS,
+  SOLANA_TOKEN_LIST_URLS,
+  CHAIN_IDS,
+  SOLANA_CLUSTERS,
+  COMMON_TOKENS,
+  NATIVE_TOKENS,
+  DEFAULT_RPC_URLS,
+  DEFAULT_SOLANA_RPC_URLS,
+  DEFAULT_CACHE_CONFIG,
+  BLOCKED_TOKENS,
+  TOKEN_TAGS,
+  // Helper functions
+  ERC20_METADATA_ABI,
+  normalizeTokenAddress,
+  isEvmAddress,
+  isSolanaAddress,
+  getTokenAddressForChain,
+  tokenListTokenToInfo,
+  mergeTokenInfo,
+  getChainName,
+  isTestnet,
+} from './tokens'
+
+export type {
+  // Token types
+  TokenInfo,
+  TokenList,
+  TokenListToken,
+  SolanaTokenInfo,
+  MetaplexMetadata,
+  // Safety types
+  TokenSafetyLevel,
+  TokenSafetyResult,
+  // Config types
+  TokenRegistryConfig,
+  SolanaTokenRegistryConfig,
+  // Cache types
+  CachedToken,
+  CachedTokenList,
+  // Search types
+  TokenSearchOptions,
+  TokenSearchResult,
+  // Event types
+  TokenRegistryEvent,
+  TokenRegistryEventListener,
+  // Error types
+  TokenRegistryErrorCode,
+} from './tokens'

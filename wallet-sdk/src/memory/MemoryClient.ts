@@ -1,14 +1,14 @@
 /**
- * MemoryClient - gRPC client stub for ExEx memory service integration
+ * MemoryClient - gRPC client for ExEx memory service integration
  *
- * This is a stub implementation that will be connected to the actual
- * ExEx memory service via gRPC-web in a future phase.
- *
- * The client handles:
+ * Provides integration with ExEx memory service via gRPC-web:
  * - Activity sync with ExEx memory service
  * - Semantic search over activity history
  * - Conflict resolution
  * - Offline-first with background sync
+ *
+ * Can run in stub mode (useGrpc: false) for testing or when
+ * ExEx service is not available.
  */
 
 import type {
@@ -19,6 +19,13 @@ import type {
   MemoryEventListener,
 } from './types'
 import type { ActivityLog } from './ActivityLog'
+import {
+  MemoryServiceClient,
+  toMemoryActivity,
+  fromMemoryActivity,
+  type MemorySyncRequest,
+  type MemorySearchRequest,
+} from './grpc'
 
 /**
  * Configuration for MemoryClient
@@ -36,6 +43,8 @@ export interface MemoryClientConfig {
   autoSync?: boolean
   /** Timeout for sync requests in milliseconds */
   timeoutMs?: number
+  /** Use real gRPC client (false = stub mode for testing) */
+  useGrpc?: boolean
 }
 
 /**
@@ -63,10 +72,11 @@ export interface SearchResult {
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error'
 
 /**
- * MemoryClient - Stub implementation for ExEx integration
+ * MemoryClient - gRPC client for ExEx memory integration
  *
- * NOTE: This is a stub. The actual gRPC-web implementation will be added
- * when the ExEx memory service protobuf definitions are finalized.
+ * Supports two modes:
+ * - gRPC mode (useGrpc: true): Real gRPC-web calls to ExEx service
+ * - Stub mode (useGrpc: false): Local stub for testing/offline
  */
 export class MemoryClient {
   private config: MemoryClientConfig
@@ -74,13 +84,22 @@ export class MemoryClient {
   private syncTimer: ReturnType<typeof setInterval> | number | null = null
   private lastSyncToken: string | null = null
   private listeners: Set<MemoryEventListener> = new Set()
+  private grpcClient: MemoryServiceClient | null = null
 
   constructor(config: MemoryClientConfig) {
     this.config = {
       syncIntervalMs: 60_000,
       autoSync: false,
       timeoutMs: 30_000,
+      useGrpc: false, // Default to stub mode
       ...config,
+    }
+
+    // Initialize gRPC client if enabled
+    if (this.config.useGrpc) {
+      this.grpcClient = new MemoryServiceClient(this.config.endpoint, {
+        timeout: this.config.timeoutMs,
+      })
     }
 
     // Load last sync token
@@ -110,19 +129,32 @@ export class MemoryClient {
 
   /**
    * Connect to the ExEx memory service
-   *
-   * NOTE: Stub implementation - always succeeds
    */
   async connect(): Promise<void> {
     this.connectionState = 'connecting'
     this.emit({ type: 'sync_started' })
 
-    // TODO: Implement actual gRPC-web connection
-    // For now, simulate connection
-    await this.simulateNetworkDelay()
-
-    this.connectionState = 'connected'
-    console.log(`[MemoryClient] Connected to ${this.config.endpoint} (stub)`)
+    if (this.grpcClient) {
+      // Use real gRPC connection
+      try {
+        const response = await this.grpcClient.healthCheck()
+        if (response.status === 0 && response.message.healthy) {
+          this.connectionState = 'connected'
+          console.log(`[MemoryClient] Connected to ${this.config.endpoint}`)
+        } else {
+          this.connectionState = 'error'
+          console.error(`[MemoryClient] Health check failed: ${response.statusMessage}`)
+        }
+      } catch (error) {
+        this.connectionState = 'error'
+        console.error('[MemoryClient] Connection failed:', error)
+      }
+    } else {
+      // Stub mode
+      await this.simulateNetworkDelay()
+      this.connectionState = 'connected'
+      console.log(`[MemoryClient] Connected to ${this.config.endpoint} (stub mode)`)
+    }
   }
 
   /**
@@ -176,8 +208,6 @@ export class MemoryClient {
 
   /**
    * Sync pending activities with ExEx
-   *
-   * NOTE: Stub implementation - simulates sync
    */
   async sync(): Promise<SyncResponse> {
     const pending = this.config.activityLog.getPendingSync()
@@ -192,14 +222,20 @@ export class MemoryClient {
 
     this.emit({ type: 'sync_started' })
 
-    const request: SyncRequest = {
-      activities: pending,
-      lastSyncToken: this.lastSyncToken ?? undefined,
-    }
-
     try {
-      // TODO: Replace with actual gRPC-web call
-      const response = await this.stubSyncActivities(request)
+      let response: SyncResponse
+
+      if (this.grpcClient) {
+        // Use real gRPC sync
+        response = await this.grpcSync(pending)
+      } else {
+        // Use stub sync
+        const request: SyncRequest = {
+          activities: pending,
+          lastSyncToken: this.lastSyncToken ?? undefined,
+        }
+        response = await this.stubSyncActivities(request)
+      }
 
       // Handle conflicts
       for (const conflict of response.conflicts) {
@@ -228,6 +264,38 @@ export class MemoryClient {
   }
 
   /**
+   * Sync using gRPC client
+   */
+  private async grpcSync(pending: ActivityLogEntry[]): Promise<SyncResponse> {
+    if (!this.grpcClient) {
+      throw new Error('gRPC client not initialized')
+    }
+
+    const request: MemorySyncRequest = {
+      agentId: this.config.agentId,
+      activities: pending.map(toMemoryActivity),
+      lastSyncToken: this.lastSyncToken ?? undefined,
+      clientVersion: 1,
+    }
+
+    const grpcResponse = await this.grpcClient.sync(request)
+
+    if (grpcResponse.status !== 0) {
+      throw new Error(`Sync failed: ${grpcResponse.statusMessage}`)
+    }
+
+    return {
+      syncToken: grpcResponse.message.syncToken,
+      conflicts: grpcResponse.message.conflicts.map((c) => ({
+        localId: c.clientActivity.id ?? 0,
+        remoteVersion: fromMemoryActivity(c.serverActivity),
+        reason: c.resolution,
+      })),
+      syncedCount: pending.length - grpcResponse.message.conflicts.length,
+    }
+  }
+
+  /**
    * Force immediate sync
    */
   async forceSync(): Promise<SyncResponse> {
@@ -239,12 +307,52 @@ export class MemoryClient {
   /**
    * Semantic search over activity history
    *
-   * NOTE: Stub implementation - falls back to local text search
+   * Uses gRPC semantic search when available, falls back to local text search.
    */
   async search(request: SearchRequest): Promise<SearchResult[]> {
-    // TODO: Replace with actual gRPC-web call to ExEx RAG service
+    if (this.grpcClient) {
+      // Use gRPC semantic search
+      return this.grpcSearch(request)
+    }
 
-    // For now, do a simple local search
+    // Fall back to local text search
+    return this.localSearch(request)
+  }
+
+  /**
+   * Semantic search using gRPC
+   */
+  private async grpcSearch(request: SearchRequest): Promise<SearchResult[]> {
+    if (!this.grpcClient) {
+      throw new Error('gRPC client not initialized')
+    }
+
+    const grpcRequest: MemorySearchRequest = {
+      agentId: this.config.agentId,
+      query: request.query,
+      topK: request.topK,
+      startTime: request.startTime,
+      endTime: request.endTime,
+    }
+
+    const response = await this.grpcClient.search(grpcRequest)
+
+    if (response.status !== 0) {
+      console.warn(`[MemoryClient] gRPC search failed: ${response.statusMessage}, falling back to local`)
+      return this.localSearch(request)
+    }
+
+    return response.message.results.map((r) => ({
+      activity: fromMemoryActivity(r.activity),
+      similarityScore: r.score,
+      summary: r.highlights?.join(' '),
+    }))
+  }
+
+  /**
+   * Local text search fallback
+   */
+  private localSearch(request: SearchRequest): SearchResult[] {
     const activities = this.config.activityLog.query({
       agentId: this.config.agentId,
       startTime: request.startTime,

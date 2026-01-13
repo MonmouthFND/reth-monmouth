@@ -2,13 +2,22 @@
  * Payments module - x402 protocol and payment routing
  */
 
-// X402 Client
+// X402 Clients
 export { X402Client, createX402Client } from './X402Client'
+export {
+  SolanaX402Client,
+  createSolanaX402Client,
+  SolanaX402Error,
+  SOLANA_X402_HEADERS,
+  solToLamports,
+  lamportsToSol,
+  formatLamports,
+} from './SolanaX402Client'
 
 // Payment Router
 export { PaymentRouter, createPaymentRouter } from './PaymentRouter'
 
-// Types
+// Types (EVM)
 export {
   X402Error,
   X402_HEADERS,
@@ -32,6 +41,17 @@ export type {
   X402PaymentDomain,
 } from './types'
 
+// Types (Solana)
+export type {
+  SolanaX402ClientConfig,
+  SolanaWalletAdapter,
+  SolanaPaymentRequired,
+  SolanaPaymentPayload,
+  SolanaPaymentReceipt,
+  SolanaX402FetchResult,
+} from './SolanaX402Client'
+
+// Payment Router
 export type {
   PaymentProtocol,
   PaymentPurpose,

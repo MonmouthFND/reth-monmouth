@@ -5,6 +5,14 @@
 // Escrow Client
 export { EscrowClient, createEscrowClient } from './EscrowClient'
 
+// Contract ABIs
+export {
+  MONMOUTH_ESCROW_ABI,
+  MONMOUTH_VERIFIER_ABI,
+  ESCROW_STATE,
+  type EscrowStateValue,
+} from './abi'
+
 // Types and utilities
 export {
   EscrowError,
