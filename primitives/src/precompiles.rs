@@ -59,12 +59,53 @@ pub struct AiInferenceInput {
     pub temperature: u32,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SimilarityMetric {
+    Cosine,
+    Euclidean,
+    DotProduct,
+}
+
+impl Default for SimilarityMetric {
+    fn default() -> Self {
+        Self::Cosine
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorSimilarityInput {
+    /// Query vector to compare against
     pub query_vector: Vec<f32>,
-    pub collection_id: u32,
+    /// Candidate vectors to compare (if provided, ignores collection_id)
+    pub candidate_vectors: Option<Vec<Vec<f32>>>,
+    /// Collection ID for ExEx-based vector store (used if candidate_vectors is None)
+    pub collection_id: Option<u32>,
+    /// Number of top results to return
     pub top_k: u32,
+    /// Minimum similarity threshold (0.0 - 1.0 for cosine)
     pub threshold: f32,
+    /// Similarity metric to use
+    pub metric: SimilarityMetric,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VectorSimilarityResult {
+    /// Index of the vector in the input array
+    pub index: u32,
+    /// Similarity score (interpretation depends on metric)
+    pub score: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VectorSimilarityOutput {
+    /// Whether the operation succeeded
+    pub success: bool,
+    /// Top-k results sorted by score (descending for similarity, ascending for distance)
+    pub results: Vec<VectorSimilarityResult>,
+    /// Error message if failed
+    pub error: Option<String>,
+    /// Gas used for computation
+    pub gas_used: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
