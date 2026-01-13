@@ -4,39 +4,48 @@
  * Agent-aware wallet layer built on Porto (EIP-7702)
  *
  * Features:
- * - Agent identity management
+ * - Agent identity management with DID support
  * - Spending guardrails (per-transaction, daily limits, allowlists)
  * - Session management
  * - Activity logging with localStorage persistence
  * - Memory client for ExEx integration (stub)
- * - x402 payment protocol (Phase 3)
+ * - x402 payment protocol for API payments
+ * - Payment routing (x402, direct, escrow)
+ * - Escrow-based commerce for agent-to-agent transactions
  *
  * @example
  * ```typescript
- * import { createMonmouthWallet, PermissionTemplates } from '@monmouth/wallet-sdk'
+ * import { createMonmouthWallet, PaymentRouter, createAgentIdentity } from '@monmouth/wallet-sdk'
  *
  * const wallet = createMonmouthWallet({
  *   identity: {
- *     agentId: 'my-research-agent',
- *     agentType: 'research',
- *     name: 'Research Assistant',
- *   },
- *   policy: {
- *     maxPerTransaction: 0.05 ETH, // Custom override
+ *     agentId: 'my-commerce-agent',
+ *     agentType: 'commerce',
+ *     name: 'Shopping Agent',
  *   },
  * })
  *
- * // Validate before sending
- * const result = wallet.prepareTransaction({
- *   to: '0x...',
- *   value: parseEther('0.01'),
+ * // Initialize decentralized identity
+ * const identity = createAgentIdentity(wallet)
+ * await identity.initialize()
+ *
+ * // Create payment router for multi-protocol payments
+ * const router = new PaymentRouter(wallet, { x402Client, escrowClient })
+ *
+ * // Pay for API access (routes to x402)
+ * await router.pay({
+ *   recipient: 'https://api.example.com',
+ *   amount: parseEther('0.01'),
+ *   purpose: 'api_access',
  * })
  *
- * if (result.allowed) {
- *   // Use wagmi to send the transaction
- *   const hash = await sendTransaction(...)
- *   wallet.recordTransaction(hash, parseEther('0.01'))
- * }
+ * // Pay for service with escrow
+ * await router.pay({
+ *   recipient: serviceAgent,
+ *   amount: parseEther('0.5'),
+ *   purpose: 'escrow',
+ *   metadata: { description: 'Data analysis' },
+ * })
  * ```
  */
 
@@ -88,7 +97,7 @@ export type {
   MemoryEventListener,
 } from './memory'
 
-// Payments (x402)
+// Payments (x402 + Router)
 export {
   X402Client,
   createX402Client,
@@ -101,6 +110,8 @@ export {
   deserializePaymentHeader,
   getTokenAddress,
   isNativeToken,
+  PaymentRouter,
+  createPaymentRouter,
 } from './payments'
 export type {
   PaymentToken,
@@ -111,9 +122,67 @@ export type {
   X402ClientConfig,
   X402FetchResult,
   X402PaymentDomain,
+  PaymentProtocol,
+  PaymentPurpose,
+  PaymentRequest,
+  PaymentResult,
+  ProtocolDetection,
+  PaymentRouterConfig,
+  PaymentRouterEvent,
+  PaymentRouterEventListener,
 } from './payments'
 
-// Core Types
+// Identity (DID)
+export {
+  AgentIdentityManager,
+  createAgentIdentity,
+  IdentityError,
+  IDENTITY_SIGNATURE_TYPES,
+} from './identity'
+export type {
+  DID,
+  AgentCapability,
+  IdentityDocument,
+  SignedIdentity,
+  VerificationResult,
+  AgentIdentityConfig,
+  IdentityEvent,
+  IdentityEventListener,
+  IdentityErrorCode,
+  IdentitySignatureDomain,
+} from './identity'
+
+// Commerce (Escrow)
+export {
+  EscrowClient,
+  createEscrowClient,
+  EscrowError,
+  generateEscrowId,
+  isEscrowActive,
+  isEscrowExpired,
+  getAvailableActions,
+  // Contract ABIs
+  MONMOUTH_ESCROW_ABI,
+  MONMOUTH_VERIFIER_ABI,
+  ESCROW_STATE,
+} from './commerce'
+export type {
+  EscrowId,
+  EscrowState,
+  CreateEscrowParams,
+  EscrowRecord,
+  EscrowResult,
+  EscrowStatus,
+  DisputeParams,
+  DisputeResolution,
+  EscrowClientConfig,
+  EscrowEvent,
+  EscrowEventListener,
+  EscrowErrorCode,
+  EscrowStateValue,
+} from './commerce'
+
+// Core Types (legacy EVM-specific)
 export type {
   AgentIdentity,
   AgentType,
@@ -128,3 +197,226 @@ export type {
   Hash,
   Hex,
 } from './types'
+
+// ============================================================
+// Multi-Chain Support (New)
+// ============================================================
+
+// Core - Universal types and interfaces
+export {
+  EVM_CHAINS,
+  SVM_CHAINS,
+  formatEscrowId,
+  parseEscrowId,
+  generateNonce,
+  validateX402Request,
+  X402_HEADERS as X402_UNIVERSAL_HEADERS,
+  // Utilities
+  addressEquals,
+  base58ToBytes,
+  bigIntReplacer,
+  bigIntReviver,
+  bytesToBase58,
+  bytesToHex,
+  createAddress,
+  createNativeToken,
+  createTokenAmount,
+  formatTokenAmount,
+  getFunctionSelector,
+  hexToBytes,
+  isContractDeployment,
+  isValidAddress as isValidUniversalAddress,
+  parseAddress,
+  parseTokenAmount,
+} from './core'
+
+export type {
+  // Types
+  ChainConfig,
+  ChainType,
+  TokenAmount,
+  TokenId,
+  TxHash,
+  TxReceipt,
+  TxResult,
+  TypedDataDomain,
+  TypedDataTypes,
+  UniversalAddress,
+  UniversalLog,
+  UniversalSignature,
+  UniversalTransaction,
+  // Adapter
+  AdapterConfig,
+  AdapterEvent,
+  AdapterEventListener,
+  AdapterFactory,
+  ChainAdapter,
+  ChainAdapterWithEvents,
+  // Escrow
+  CreateEscrowParams as UniversalCreateEscrowParams,
+  DisputeDetails,
+  EscrowAdapter,
+  EscrowAdapterFactory,
+  EscrowEvent as UniversalEscrowEvent,
+  EscrowEventListener as UniversalEscrowEventListener,
+  EscrowId as UniversalEscrowId,
+  EscrowState as UniversalEscrowState,
+  EscrowStatus as UniversalEscrowStatus,
+  // x402
+  X402Adapter,
+  X402AdapterFactory,
+  X402Event as UniversalX402Event,
+  X402EventListener as UniversalX402EventListener,
+  X402Payment as UniversalX402Payment,
+  X402PaymentRequest as UniversalX402PaymentRequest,
+  X402PaymentResult as UniversalX402PaymentResult,
+  X402ValidationOptions,
+} from './core'
+
+// Chain Adapters
+export {
+  EvmAdapter,
+  createEvmAdapter,
+  SolanaAdapter,
+  createSolanaAdapter,
+} from './adapters'
+
+export type {
+  EvmAdapterConfig,
+  SolanaAdapterConfig,
+  SolanaWalletAdapter,
+} from './adapters'
+
+// Multi-chain Agent Wallet
+export {
+  AgentWallet,
+  createAgentWallet,
+  DEFAULT_POLICIES,
+  AgentIdentityManager as MultiChainIdentityManager,
+  createAgentIdentityManager,
+} from './wallet'
+
+export type {
+  AgentIdentity as MultiChainAgentIdentity,
+  AgentIdentityConfig as MultiChainAgentIdentityConfig,
+  AgentType as MultiChainAgentType,
+  AgentWalletConfig,
+  PolicyValidationResult as MultiChainPolicyValidationResult,
+  SpendingPolicy as MultiChainSpendingPolicy,
+  TransactionIntent as MultiChainTransactionIntent,
+  WalletEvent as MultiChainWalletEvent,
+  WalletEventListener as MultiChainWalletEventListener,
+  WalletState as MultiChainWalletState,
+  // Identity
+  AgentCapability as MultiChainAgentCapability,
+  DID as MultiChainDID,
+  IdentityDocument as MultiChainIdentityDocument,
+  IdentityEvent as MultiChainIdentityEvent,
+  IdentityEventListener as MultiChainIdentityEventListener,
+  IdentityManagerConfig,
+  SignedIdentity as MultiChainSignedIdentity,
+  VerificationResult as MultiChainVerificationResult,
+} from './wallet'
+
+// ============================================================
+// EIP-712 Signing (New)
+// ============================================================
+
+export {
+  EIP712Signer,
+  createEIP712Signer,
+  SigningError,
+  SIGNING_DOMAINS,
+  IDENTITY_TYPES as EIP712_IDENTITY_TYPES,
+  PAYMENT_TYPES as EIP712_PAYMENT_TYPES,
+  ESCROW_TYPES as EIP712_ESCROW_TYPES,
+  MONMOUTH_CHAIN_ID,
+  // Verification utilities
+  verifyIdentitySignature,
+  verifyPaymentSignature,
+  verifyIdentityOnChain,
+  verifyPaymentOnChain,
+  computeDomainSeparator,
+  computeIdentityStructHash,
+  computePaymentStructHash,
+  computeDigest,
+  VERIFIER_ABI,
+} from './signing'
+
+export type {
+  EIP712SignerConfig,
+  EIP712Domain,
+  IdentityMessage,
+  PaymentMessage,
+  EscrowCreateMessage,
+  EscrowActionMessage,
+  SignedData,
+  TypedDataSigner,
+  NonceManager,
+  SigningDomainName,
+  SigningErrorCode,
+} from './signing'
+
+// ============================================================
+// Token Registry (New)
+// ============================================================
+
+// Token Registry
+export {
+  TokenRegistry,
+  createTokenRegistry,
+  getTokenRegistry,
+  SolanaTokenRegistry,
+  createSolanaTokenRegistry,
+  createMainnetSolanaRegistry,
+  createDevnetSolanaRegistry,
+  TokenRegistryError,
+  // Constants
+  DEFAULT_TOKEN_LIST_URLS,
+  SOLANA_TOKEN_LIST_URLS,
+  CHAIN_IDS,
+  SOLANA_CLUSTERS,
+  COMMON_TOKENS,
+  NATIVE_TOKENS,
+  DEFAULT_RPC_URLS,
+  DEFAULT_SOLANA_RPC_URLS,
+  DEFAULT_CACHE_CONFIG,
+  BLOCKED_TOKENS,
+  TOKEN_TAGS,
+  // Helper functions
+  ERC20_METADATA_ABI,
+  normalizeTokenAddress,
+  isEvmAddress,
+  isSolanaAddress,
+  getTokenAddressForChain,
+  tokenListTokenToInfo,
+  mergeTokenInfo,
+  getChainName,
+  isTestnet,
+} from './tokens'
+
+export type {
+  // Token types
+  TokenInfo,
+  TokenList,
+  TokenListToken,
+  SolanaTokenInfo,
+  MetaplexMetadata,
+  // Safety types
+  TokenSafetyLevel,
+  TokenSafetyResult,
+  // Config types
+  TokenRegistryConfig,
+  SolanaTokenRegistryConfig,
+  // Cache types
+  CachedToken,
+  CachedTokenList,
+  // Search types
+  TokenSearchOptions,
+  TokenSearchResult,
+  // Event types
+  TokenRegistryEvent,
+  TokenRegistryEventListener,
+  // Error types
+  TokenRegistryErrorCode,
+} from './tokens'

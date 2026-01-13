@@ -1,0 +1,15 @@
+# Test results and reports
+test-results/
+reports/
+
+# Playwright state
+.playwright/
+playwright-report/
+
+# Screenshots and videos
+*.png
+*.webm
+*.zip
+
+# Keep empty directories
+!.gitkeep
