@@ -4,6 +4,8 @@ import {
   http,
   formatEther,
   parseEther,
+  keccak256,
+  toHex,
   type Address,
   type Hash,
   type Log,
@@ -344,10 +346,8 @@ export async function createEscrow(
   timeoutSeconds: number
 ): Promise<Hash> {
   const wallet = createTraderWallet();
-  const jobHash = await publicClient.request({
-    method: 'web3_sha3' as 'web3_clientVersion',
-    params: [jobDescription as `0x${string}`],
-  }) as Hash;
+  // Hash the job description using keccak256
+  const jobHash = keccak256(toHex(jobDescription));
 
   const hash = await wallet.writeContract({
     address: ESCROW_ADDRESS,
@@ -378,10 +378,8 @@ export async function deliverEscrow(
   result: string
 ): Promise<Hash> {
   const wallet = createResearchWallet();
-  const resultHash = await publicClient.request({
-    method: 'web3_sha3' as 'web3_clientVersion',
-    params: [result as `0x${string}`],
-  }) as Hash;
+  // Hash the result using keccak256
+  const resultHash = keccak256(toHex(result));
 
   const hash = await wallet.writeContract({
     address: ESCROW_ADDRESS,
