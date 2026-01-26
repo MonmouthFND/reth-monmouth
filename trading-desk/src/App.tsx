@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DemoGrid } from './components/Layout/DemoGrid';
 import { PriceChart, TradeMarker } from './components/Chart/PriceChart';
 import { TraderPanel } from './components/Panels/TraderPanel';
@@ -6,100 +6,14 @@ import { ActivityFeed, ActivityItem } from './components/Panels/ActivityFeed';
 import { ResearchPanel } from './components/Panels/ResearchPanel';
 import { ReasoningPanel } from './components/Panels/ReasoningPanel';
 import { LineData, Time } from 'lightweight-charts';
-
-// Mock data for demo
-const mockTraderAgent = {
-  did: 'did:key:z6MkhaXgBZDvotDkL5LMrxFfGVpMPgscYAK4xVnQrNQqpoHE',
-  balance: '0.485 ETH',
-  balanceUsd: '$1,576.25',
-  todayPnL: 12.45,
-  tradeCount: 5,
-  policy: {
-    maxPerTx: '$100',
-    dailyCap: '$500',
-    todaySpent: '$410',
-    usagePercent: 82,
-  },
-  status: 'analyzing' as const,
-};
-
-const mockResearchAgent = {
-  did: 'did:key:z6MknGc3ocHs3zdPiJbnaaqDi58ExyJMu8AUV6kBP7w9pGpL',
-  balance: '0.018 ETH',
-  earnings: '$15.00',
-  jobsCompleted: 3,
-  status: 'available' as const,
-  lastResult: {
-    sentiment: 'bullish' as const,
-    confidence: 75,
-    recommendation: 'Buy ETH with moderate position size',
-  },
-};
-
-const mockActivities: ActivityItem[] = [
-  {
-    id: '6',
-    timestamp: Date.now() - 5000,
-    type: 'trade_buy',
-    message: 'Bought 0.025 ETH @ $3,245',
-    amount: '$81.13',
-    txHash: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
-  },
-  {
-    id: '5',
-    timestamp: Date.now() - 25000,
-    type: 'escrow_released',
-    message: 'Escrow #1 released: $5 to Research Agent',
-    txHash: '0x2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c',
-  },
-  {
-    id: '4',
-    timestamp: Date.now() - 35000,
-    type: 'escrow_claimed',
-    message: 'Research delivered: "Bullish, 75% confidence"',
-  },
-  {
-    id: '3',
-    timestamp: Date.now() - 55000,
-    type: 'escrow_claimed',
-    message: 'Escrow #1 claimed by Research Agent',
-  },
-  {
-    id: '2',
-    timestamp: Date.now() - 75000,
-    type: 'escrow_created',
-    message: 'Created escrow #1: $5 for market analysis',
-    amount: '$5.00',
-    txHash: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d',
-  },
-  {
-    id: '1',
-    timestamp: Date.now() - 120000,
-    type: 'session_start',
-    message: 'Trading session started',
-  },
-];
-
-const mockReasoning = `Analyzing current market conditions...
-
-Current price: $3,245.67
-24h change: +2.3%
-Research sentiment: bullish
-
-Decision factors:
-• Strong support at $3,200 level
-• Volume increasing over past 4 hours
-• RSI at 58 (not overbought)
-• Research agent confidence: 75%
-
-Checking guardrails:
-• Max per trade: $100 ✓
-• Daily remaining: $90 ✓
-• Recipient allowlisted: N/A
-
-→ Placing BUY order
-Amount: $80 (within guardrails)
-Expected execution: ~2 seconds`;
+import {
+  useChainStatus,
+  useAgentBalances,
+  useEscrowEvents,
+  useEscrowActions,
+  TEST_ACCOUNTS,
+  ESCROW_ADDRESS,
+} from './hooks/useMonmouth';
 
 // Generate mock price data
 function generatePriceData(): LineData[] {
@@ -110,7 +24,7 @@ function generatePriceData(): LineData[] {
   for (let i = 100; i >= 0; i--) {
     const time = (now - i * 60) as Time;
     const randomWalk = (Math.random() - 0.48) * 15;
-    const trend = (100 - i) * 0.3; // Slight upward trend
+    const trend = (100 - i) * 0.3;
     const price = basePrice + trend + randomWalk + Math.sin(i / 10) * 20;
     data.push({ time, value: price });
   }
@@ -118,7 +32,7 @@ function generatePriceData(): LineData[] {
   return data;
 }
 
-// Generate mock trade markers
+// Generate trade markers from escrow events
 function generateTradeMarkers(priceData: LineData[]): TradeMarker[] {
   if (priceData.length < 20) return [];
 
@@ -151,12 +65,46 @@ function generateTradeMarkers(priceData: LineData[]): TradeMarker[] {
 }
 
 export default function App() {
+  // Chain state
+  const chainStatus = useChainStatus();
+  const { balances, refresh: refreshBalances } = useAgentBalances();
+  const escrowEvents = useEscrowEvents();
+  const escrowActions = useEscrowActions();
+
+  // UI state
   const [priceData, setPriceData] = useState<LineData[]>([]);
   const [currentPrice, setCurrentPrice] = useState(3245.67);
   const [priceChange, setPriceChange] = useState(2.3);
   const [trades, setTrades] = useState<TradeMarker[]>([]);
-  const [traderAgent, setTraderAgent] = useState(mockTraderAgent);
-  const [activities, setActivities] = useState(mockActivities);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [reasoning, setReasoning] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [currentEscrowId, setCurrentEscrowId] = useState<bigint | null>(null);
+
+  // Convert escrow events to activity items
+  useEffect(() => {
+    const newActivities: ActivityItem[] = escrowEvents.map((event, idx) => {
+      const typeMap: Record<string, ActivityItem['type']> = {
+        created: 'escrow_created',
+        claimed: 'escrow_claimed',
+        delivered: 'escrow_claimed',
+        released: 'escrow_released',
+        expired: 'blocked',
+      };
+
+      return {
+        id: `${event.txHash}-${idx}`,
+        timestamp: Date.now() - idx * 5000,
+        type: typeMap[event.type] || 'session_start',
+        message: `Escrow #${event.escrowId}: ${event.type}`,
+        txHash: event.txHash,
+      };
+    });
+
+    if (newActivities.length > 0) {
+      setActivities((prev) => [...newActivities, ...prev].slice(0, 20));
+    }
+  }, [escrowEvents]);
 
   // Initialize price data
   useEffect(() => {
@@ -186,6 +134,149 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Demo: Run the trading flow
+  const runDemoFlow = useCallback(async () => {
+    if (!chainStatus.connected) {
+      setReasoning('❌ Not connected to Monmouth L2. Please start the node.');
+      return;
+    }
+
+    setIsThinking(true);
+    setReasoning('Connecting to Monmouth L2...\n');
+
+    try {
+      // Step 1: Create escrow
+      setReasoning((prev) => prev + `\n✓ Connected to chain ${chainStatus.chainId}\n`);
+      setReasoning((prev) => prev + `\nCreating escrow for market analysis...\n`);
+      setReasoning((prev) => prev + `  Provider: ${TEST_ACCOUNTS.research.address.slice(0, 10)}...\n`);
+      setReasoning((prev) => prev + `  Amount: 0.005 ETH\n`);
+      setReasoning((prev) => prev + `  Timeout: 1 hour\n`);
+
+      const createTx = await escrowActions.create(
+        'Analyze ETH/USD market sentiment',
+        '0.005',
+        3600
+      );
+      setReasoning((prev) => prev + `\n✓ Escrow created!\n  TX: ${createTx.slice(0, 18)}...\n`);
+
+      // Get escrow ID from count
+      const escrowId = chainStatus.escrowCount;
+      setCurrentEscrowId(escrowId);
+
+      // Step 2: Research agent claims
+      setReasoning((prev) => prev + `\n🔬 Research Agent claiming escrow #${escrowId}...\n`);
+      await new Promise((r) => setTimeout(r, 1000));
+
+      const claimTx = await escrowActions.claim(escrowId);
+      setReasoning((prev) => prev + `✓ Claimed! TX: ${claimTx.slice(0, 18)}...\n`);
+
+      // Step 3: Research agent delivers
+      setReasoning((prev) => prev + `\n📊 Analyzing market...\n`);
+      await new Promise((r) => setTimeout(r, 2000));
+
+      setReasoning((prev) => prev + `\nMarket Analysis Results:\n`);
+      setReasoning((prev) => prev + `  • Sentiment: BULLISH\n`);
+      setReasoning((prev) => prev + `  • Confidence: 75%\n`);
+      setReasoning((prev) => prev + `  • Support: $3,200\n`);
+      setReasoning((prev) => prev + `  • Resistance: $3,400\n`);
+
+      const deliverTx = await escrowActions.deliver(
+        escrowId,
+        'Bullish sentiment, 75% confidence, recommend BUY'
+      );
+      setReasoning((prev) => prev + `\n✓ Delivered! TX: ${deliverTx.slice(0, 18)}...\n`);
+
+      // Step 4: Trader releases payment
+      setReasoning((prev) => prev + `\n💰 Releasing payment to Research Agent...\n`);
+      await new Promise((r) => setTimeout(r, 500));
+
+      const releaseTx = await escrowActions.release(escrowId);
+      setReasoning((prev) => prev + `✓ Released! TX: ${releaseTx.slice(0, 18)}...\n`);
+
+      // Refresh balances
+      await refreshBalances();
+
+      setReasoning((prev) => prev + `\n════════════════════════════════════\n`);
+      setReasoning((prev) => prev + `✅ Demo flow complete!\n`);
+      setReasoning((prev) => prev + `\nNew balances:\n`);
+      setReasoning((prev) => prev + `  Trader: ${balances.trader.slice(0, 8)} ETH\n`);
+      setReasoning((prev) => prev + `  Research: ${balances.research.slice(0, 8)} ETH\n`);
+    } catch (error) {
+      setReasoning(
+        (prev) => prev + `\n❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}\n`
+      );
+    } finally {
+      setIsThinking(false);
+    }
+  }, [chainStatus, escrowActions, refreshBalances, balances]);
+
+  // Initial reasoning text
+  useEffect(() => {
+    if (chainStatus.connected) {
+      setReasoning(
+        `Connected to Monmouth L2 (Chain ID: ${chainStatus.chainId})\n` +
+          `Block: ${chainStatus.blockNumber}\n` +
+          `Escrow Contract: ${ESCROW_ADDRESS}\n` +
+          `Total Escrows: ${chainStatus.escrowCount}\n` +
+          `Total Locked: ${chainStatus.totalLocked} ETH\n\n` +
+          `Trader Agent: ${TEST_ACCOUNTS.trader.address.slice(0, 18)}...\n` +
+          `  Balance: ${balances.trader.slice(0, 8)} ETH\n\n` +
+          `Research Agent: ${TEST_ACCOUNTS.research.address.slice(0, 18)}...\n` +
+          `  Balance: ${balances.research.slice(0, 8)} ETH\n\n` +
+          `Click "Run Demo" to execute escrow flow.`
+      );
+    } else {
+      setReasoning(
+        `⏳ Connecting to Monmouth L2...\n\n` +
+          `Make sure the L2 node is running:\n` +
+          `  ./scripts/start_dev.sh\n\n` +
+          `Expected RPC: http://localhost:8545`
+      );
+    }
+  }, [chainStatus, balances]);
+
+  // Build trader agent data
+  const traderAgent = {
+    did: `did:key:${TEST_ACCOUNTS.trader.address.slice(2, 42)}`,
+    balance: `${balances.trader.slice(0, 6)} ETH`,
+    balanceUsd: `$${(parseFloat(balances.trader) * currentPrice).toFixed(2)}`,
+    todayPnL: 12.45,
+    tradeCount: Number(chainStatus.escrowCount),
+    policy: {
+      maxPerTx: '$100',
+      dailyCap: '$500',
+      todaySpent: '$85',
+      usagePercent: 17,
+    },
+    status: isThinking ? ('analyzing' as const) : ('idle' as const),
+  };
+
+  const researchAgent = {
+    did: `did:key:${TEST_ACCOUNTS.research.address.slice(2, 42)}`,
+    balance: `${balances.research.slice(0, 6)} ETH`,
+    earnings: '$15.00',
+    jobsCompleted: Number(chainStatus.escrowCount),
+    status: isThinking ? ('working' as const) : ('available' as const),
+    lastResult: {
+      sentiment: 'bullish' as const,
+      confidence: 75,
+      recommendation: 'Buy ETH with moderate position size',
+    },
+  };
+
+  // Add demo button activity
+  const demoActivity: ActivityItem = {
+    id: 'demo-btn',
+    timestamp: Date.now(),
+    type: 'session_start',
+    message: chainStatus.connected
+      ? '🚀 Ready - Click "Run Demo" in Reasoning panel'
+      : '⏳ Waiting for L2 connection...',
+  };
+
+  const allActivities =
+    activities.length > 0 ? activities : [demoActivity];
+
   return (
     <DemoGrid
       chart={
@@ -200,24 +291,29 @@ export default function App() {
       traderPanel={<TraderPanel agent={traderAgent} />}
       activityFeed={
         <ActivityFeed
-          activities={activities}
+          activities={allActivities}
           stats={{
-            trades: 5,
+            trades: Number(chainStatus.escrowCount),
             pnl: 12.45,
             blocked: 0,
           }}
         />
       }
-      researchPanel={<ResearchPanel agent={mockResearchAgent} />}
+      researchPanel={<ResearchPanel agent={researchAgent} />}
       reasoningPanel={
         <ReasoningPanel
-          text={mockReasoning}
-          isThinking={false}
-          decision={{
-            action: 'buy',
-            amount: '$80',
-            reason: 'Within guardrails, research bullish',
-          }}
+          text={reasoning}
+          isThinking={isThinking}
+          decision={
+            chainStatus.connected
+              ? {
+                  action: 'demo',
+                  amount: 'Run Demo',
+                  reason: 'Execute full escrow flow',
+                }
+              : undefined
+          }
+          onAction={runDemoFlow}
         />
       }
     />

@@ -381,6 +381,9 @@ contract MonmouthEscrowTest is Test {
     }
 
     function testFuzz_create_anyTimeout(uint32 timeout) public {
+        // Bound timeout to avoid overflow (max ~136 years from now)
+        timeout = uint32(bound(timeout, 0, type(uint32).max - uint32(block.timestamp)));
+
         vm.prank(client);
         uint256 id = escrow.create{value: AMOUNT}(provider, JOB_HASH, timeout);
 

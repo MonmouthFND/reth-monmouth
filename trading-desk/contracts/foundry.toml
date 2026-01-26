@@ -12,13 +12,10 @@ optimizer_runs = 200
 fuzz = { runs = 256, max_test_rejects = 65536 }
 invariant = { runs = 256, depth = 15 }
 
+# Gas reporting
+gas_reports = ["MonmouthEscrow"]
+
 # Monmouth L2 deployment
 [rpc_endpoints]
 monmouth_local = "http://localhost:8545"
 monmouth_testnet = "${MONMOUTH_TESTNET_RPC_URL}"
-
-[etherscan]
-monmouth_testnet = { key = "${ETHERSCAN_API_KEY}", url = "${MONMOUTH_EXPLORER_URL}" }
-
-# Gas reporting
-gas_reports = ["MonmouthEscrow"]

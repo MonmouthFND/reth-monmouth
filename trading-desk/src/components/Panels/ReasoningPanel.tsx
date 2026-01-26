@@ -6,13 +6,14 @@ interface ReasoningPanelProps {
   text: string;
   isThinking: boolean;
   decision?: {
-    action: 'buy' | 'sell' | 'hold' | 'blocked';
+    action: 'buy' | 'sell' | 'hold' | 'blocked' | 'demo';
     amount?: string;
     reason?: string;
   };
+  onAction?: () => void;
 }
 
-export function ReasoningPanel({ text, isThinking, decision }: ReasoningPanelProps) {
+export function ReasoningPanel({ text, isThinking, decision, onAction }: ReasoningPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll as text streams in
@@ -49,24 +50,28 @@ export function ReasoningPanel({ text, isThinking, decision }: ReasoningPanelPro
           {isThinking && <span className={styles.cursor}>▌</span>}
         </div>
 
-        {/* Decision badge (when made) */}
+        {/* Decision badge / Action button (when made) */}
         {decision && !isThinking && (
           <motion.div
-            className={`${styles.decision} ${styles[decision.action]}`}
+            className={`${styles.decision} ${styles[decision.action]} ${onAction ? styles.clickable : ''}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.165, 0.84, 0.44, 1] }}
+            onClick={onAction}
+            role={onAction ? 'button' : undefined}
+            tabIndex={onAction ? 0 : undefined}
           >
             <div className={styles.decisionIcon}>
               {decision.action === 'buy' && '↗'}
               {decision.action === 'sell' && '↘'}
               {decision.action === 'hold' && '⏸'}
               {decision.action === 'blocked' && '⛔'}
+              {decision.action === 'demo' && '▶'}
             </div>
             <div className={styles.decisionContent}>
               <div className={styles.decisionAction}>
-                {decision.action.toUpperCase()}
-                {decision.amount && (
+                {decision.action === 'demo' ? decision.amount : decision.action.toUpperCase()}
+                {decision.action !== 'demo' && decision.amount && (
                   <span className={styles.decisionAmount}>{decision.amount}</span>
                 )}
               </div>
