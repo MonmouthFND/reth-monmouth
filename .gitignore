@@ -5,6 +5,7 @@ Cargo.lock
 
 # Node data
 data/
+data-*/
 logs/
 jwt/
 
