@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Monmouth is an agent-aware Layer 2 blockchain built on Reth v1.8.1, featuring AI/ML transaction classification, custom precompiles for AI operations, and a modular ExEx (Execution Extension) system for remote services. The project extends Reth without forking, ensuring upstream compatibility.
+Monmouth is an agent-aware Layer 2 blockchain built on Reth v1.8.1, designed for AI agents to transact safely and efficiently. The project extends Reth without forking, ensuring upstream compatibility.
+
+**Key Architecture Decision**: AI/ML operations happen **off-chain** via LLM API calls and tool use. The blockchain handles settlement and verification only. On-chain ML is not feasible—even local MLX setups are slow, putting ML algorithms into blockchain consensus is impractical.
 
 ## Build and Development Commands
 
@@ -71,23 +73,22 @@ curl http://localhost:9001/metrics
 ### Module Interaction Flow
 
 1. **Transaction Entry**: Transactions enter through RPC → `txpool` module
-2. **Classification Pipeline**: `txpool/agent_pool.rs` → ExEx client or fallback heuristic classifier
+2. **Classification Pipeline**: `txpool/agent_pool.rs` → Heuristic classifier based on function selectors
 3. **Execution Path Routing**:
    - `EvmOnly` → Standard EVM execution via `evm` module
    - `SvmOnly` → Routed to SVM precompile (0x1003)
    - `HybridEvmSvm` → Multi-step execution plan created
-   - `RagEnhanced` → Context fetched from ExEx services
 
 ### ExEx (Execution Extension) System
 
-The ExEx system (`exex-host/`) provides gRPC-based remote service integration:
+The ExEx system (`exex-host/`) provides gRPC-based streaming of blockchain events:
 
 - **Protocol**: Defined in `exex-host/proto/exex.proto`
 - **Default Port**: 50051
-- **Services Expected**:
-  - Classification Service (ML-based tx classification)
-  - SVM Execution Service (Solana VM programs)
-  - RAG Memory Service (context and history)
+- **Services Provided**:
+  - Real-time block/header/receipt streaming
+  - Transaction classification (heuristic-based)
+  - Health monitoring
 
 When modifying ExEx services:
 1. Update `proto/exex.proto`
@@ -98,13 +99,12 @@ When modifying ExEx services:
 
 Located in `evm/src/precompiles.rs`, addresses hardcoded in `primitives/src/precompiles.rs`:
 
-- `0x1000`: AI Inference
-- `0x1001`: Vector Similarity  
-- `0x1002`: Intent Parser
-- `0x1003`: SVM Router
-- `0x4200`: L2 Message Passer
+- `0x1003`: SVM Router (Solana VM program execution for cross-chain operations)
+- `0x4200`: L2 Message Passer (L1↔L2 deposits, withdrawals, cross-layer messaging)
 
 Precompiles are registered in `evm/src/factory.rs` via the EVM builder's handler register.
+
+**Note**: AI precompiles (0x1000-0x1002) were removed. AI/ML happens off-chain via LLM APIs.
 
 ### Transaction Classification
 
@@ -183,7 +183,7 @@ Cli::<EthereumChainSpecParser, MonmouthNodeArgs>::parse()
 
 ### EVM Customization
 
-Monmouth extends the EVM with custom precompiles for AI/ML operations and cross-chain execution.
+Monmouth extends the EVM with custom precompiles for cross-chain execution and L1↔L2 bridging.
 
 **Architecture Pattern:**
 - Delegation wrapper around `EthEvmConfig`
@@ -195,23 +195,16 @@ Monmouth extends the EVM with custom precompiles for AI/ML operations and cross-
 
 | Address | Name | Purpose | Status |
 |---------|------|---------|--------|
-| 0x1000 | AI Inference | ML model execution on-chain | 🚧 Stub |
-| 0x1001 | Vector Similarity | Semantic search & RAG operations | 🚧 Stub |
-| 0x1002 | Intent Parser | Natural language → transaction plans | 🚧 Stub |
 | 0x1003 | SVM Router | Solana VM program execution | 🚧 Stub |
-| 0x4200 | L2 Message Passer | L1 ↔ L2 cross-layer messaging | 🚧 Stub |
+| 0x4200 | L2 Message Passer | L1 ↔ L2 cross-layer messaging | ✅ Implemented |
+
+**Note**: AI precompiles (0x1000-0x1002) were intentionally removed. AI/ML operations happen off-chain via LLM API calls—on-chain ML is not feasible for performance reasons.
 
 **Implementation Locations:**
 - `evm/src/factory.rs` - `MonmouthEvmConfig` wrapper
 - `evm/src/precompiles.rs` - Precompile implementations
 - `primitives/src/precompiles.rs` - Addresses & data structures
 - `node/src/node.rs` - `MonmouthExecutorBuilder` integration
-
-**Implementation Status:**
-- Precompile infrastructure exists with stub implementations
-- Gas models defined for each precompile
-- Type system for inputs/outputs in place
-- Real ML/AI logic not yet implemented (returns mock data)
 
 **Quick Reference - Adding a Precompile:**
 1. Define address in `primitives/src/precompiles.rs`
@@ -252,13 +245,8 @@ Default ports used by the node:
 - **8545**: HTTP JSON-RPC
 - **8546**: WebSocket RPC
 - **8551**: Engine API
-- **50051**: ExEx gRPC service
+- **50051**: ExEx gRPC service (block/header streaming, health checks)
 - **9001**: Prometheus metrics
-
-ExEx remote services expected on:
-- **50051**: Classification Service
-- **50052**: SVM Execution Service
-- **50053**: RAG Memory Service
 
 ### Production Considerations
 
@@ -299,3 +287,30 @@ Important environment variables for development:
 - `L1_RPC_URL`: L1 RPC endpoint for sequencer mode
 - `RUST_LOG`: Logging level (e.g., `info,monmouth=debug`)
 - `TOKIO_WORKER_THREADS`: Number of async runtime threads (default: 8)
+
+---
+
+## Documentation Standards
+
+### Project Documentation Files
+
+For every project, write a detailed `FOR[yourname].md` file that explains the whole project in plain language.
+
+**What to include:**
+
+1. **Technical Architecture** - How the system works at a high level, the "why" behind design decisions
+2. **Codebase Structure** - How the various parts connect, what lives where, the dependency graph
+3. **Technologies Used** - What we chose and why (not just "we use X" but "we use X because Y")
+4. **Lessons Learned** - This is the most valuable part:
+   - Bugs we ran into and how we fixed them
+   - Potential pitfalls and how to avoid them
+   - New technologies and what we learned about them
+   - How good engineers think and approach problems
+   - Best practices we discovered or reinforced
+
+**Writing style:**
+- Make it engaging to read - not boring technical documentation
+- Use analogies and anecdotes to make concepts memorable
+- Write like you're explaining to a smart friend, not writing a textbook
+- Include the "aha moments" and debugging war stories
+- Be honest about what's hacky vs what's clean

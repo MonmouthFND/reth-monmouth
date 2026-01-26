@@ -1,0 +1,70 @@
+{
+  "name": "@monmouth/wallet-sdk",
+  "version": "0.1.0",
+  "description": "Agent wallet SDK for Monmouth - built on Porto",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "workspaces": [
+    "test-app"
+  ],
+  "scripts": {
+    "dev": "cd test-app && bun run dev",
+    "build": "tsc",
+    "build:app": "cd test-app && bun run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:app": "cd test-app && bun run test",
+    "test:all": "bun run test && bun run test:app",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report e2e/reports",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^3.0.0",
+    "@solana/web3.js": "^1.98.4",
+    "bs58": "^6.0.0",
+    "dexie": "^4.0.10",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "fake-indexeddb": "^6.0.0",
+    "typescript": "~5.6.2",
+    "vitest": "^2.1.8"
+  },
+  "peerDependencies": {
+    "porto": "^0.2.37",
+    "wagmi": "^2.14.11"
+  },
+  "keywords": [
+    "monmouth",
+    "wallet",
+    "ai-agents",
+    "porto",
+    "eip-7702",
+    "wagmi",
+    "guardrails",
+    "agent-wallet"
+  ],
+  "license": "MIT"
+}

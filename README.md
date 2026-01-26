@@ -1,14 +1,14 @@
 # Monmouth L2 Node
 
-An agent-aware Layer 2 blockchain built on Reth, featuring AI/ML transaction classification, custom precompiles, and remote execution extensions (ExEx).
+An agent-aware Layer 2 blockchain built on Reth, designed for AI agents to transact safely and efficiently.
 
 ## Features
 
 ### Core Capabilities
 
-- **Agent-Aware Transaction Pool**: ML-powered transaction classification with intent recognition
-- **Custom AI Precompiles**: Built-in support for AI inference, vector similarity, and intent parsing
-- **ExEx Architecture**: Modular remote services for SVM execution and RAG memory
+- **Agent-Aware Wallet SDK**: Guardrails, spending limits, and policy enforcement for autonomous AI agents
+- **Off-Chain AI, On-Chain Settlement**: AI/ML happens via LLM API calls; blockchain handles verification and settlement
+- **Custom Precompiles**: SVM Router for Solana cross-chain, L2 Message Passer for L1↔L2 bridging
 - **L2 Sequencer**: Production-ready sequencer with batch compression and L1 data availability
 - **Prague EVM**: Latest EVM features with custom precompile extensions
 - **No Fork Maintenance**: Extends Reth without forking, ensuring compatibility
@@ -16,17 +16,14 @@ An agent-aware Layer 2 blockchain built on Reth, featuring AI/ML transaction cla
 ### Architecture Components
 
 1. **Transaction Classification System**
-   - Automatic intent detection (swap, transfer, lending, staking, NFT, AI)
+   - Automatic intent detection (swap, transfer, lending, staking, NFT)
    - Confidence scoring with configurable thresholds
+   - Heuristic classification based on function selectors
    - Multi-runtime routing (EVM, SVM, Hybrid)
-   - Fallback heuristic classification
 
 2. **Custom Precompiles**
-   - AI Inference (0x1000): ML model execution
-   - Vector Similarity (0x1001): Semantic search operations
-   - Intent Parser (0x1002): Natural language processing
-   - SVM Router (0x1003): Solana VM program execution
-   - L2 Message Passer (0x4200): Cross-layer communication
+   - SVM Router (0x1003): Solana VM program execution for cross-chain operations
+   - L2 Message Passer (0x4200): L1↔L2 deposits, withdrawals, and cross-layer messaging
 
 3. **ExEx Host Service**
    - gRPC streaming of blockchain events
@@ -39,6 +36,19 @@ An agent-aware Layer 2 blockchain built on Reth, featuring AI/ML transaction cla
    - Batch compression for L1 submission
    - State root management
    - Withdrawal and deposit processing
+
+### AI/ML Architecture
+
+**Important**: AI/ML operations happen **off-chain**, not on-chain.
+
+```
+AI Agent → Wallet SDK → LLM API (off-chain) → Tool calls → Transactions → Monmouth L2
+```
+
+- LLMs (Claude, GPT, etc.) handle reasoning and planning off-chain
+- Wallet SDK enforces guardrails and policies
+- Blockchain handles settlement and verification only
+- On-chain ML is not feasible (even local MLX is slow; consensus would be impractical)
 
 ## Quick Start
 
@@ -139,28 +149,24 @@ TOKIO_WORKER_THREADS=8
 
 ## ExEx Services Integration
 
-The node expects the following remote ExEx services:
+The ExEx host provides gRPC streaming of blockchain events:
 
-### Classification Service (port 50051)
-Provides ML-based transaction classification and intent recognition.
+### Available RPCs (port 50051)
+- `StreamHeaders`: Real-time block header notifications
+- `StreamBlocks`: Full block data streaming
+- `StreamReceipts`: Transaction receipt streaming
+- `ClassifyTransaction`: Heuristic-based transaction classification
+- `HealthCheck`: Service health monitoring
 
-### SVM Execution Service (port 50052)
-Handles Solana VM program execution for hybrid transactions.
-
-### RAG Memory Service (port 50053)
-Maintains transaction history and provides contextual information.
-
-### Example ExEx Service Implementation
+### Example: Streaming Block Headers
 
 ```rust
-// Implement the proto::ExExService trait
-impl ExExService for MyService {
-    async fn classify_transaction(
-        &self,
-        request: Request<TransactionRequest>,
-    ) -> Result<Response<ClassificationResponse>, Status> {
-        // Your ML classification logic
-    }
+// Connect to ExEx and stream headers
+let mut client = ExExServiceClient::connect("http://localhost:50051").await?;
+let mut stream = client.stream_headers(HeaderFilter { chain_id: 7750 }).await?;
+
+while let Some(header) = stream.message().await? {
+    println!("New block: {} hash: {:?}", header.number, header.hash);
 }
 ```
 

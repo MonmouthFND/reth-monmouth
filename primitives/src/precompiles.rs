@@ -1,26 +1,23 @@
 use alloy_primitives::{Address, Bytes, U256};
 use serde::{Deserialize, Serialize};
 
-pub const AI_INFERENCE_PRECOMPILE: Address = Address::new([
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x10, 0x00,
-]);
+// =============================================================================
+// PRECOMPILE ADDRESSES
+// =============================================================================
+// Note: AI/ML operations (inference, vector search, intent parsing) happen
+// OFF-CHAIN via LLM API calls. On-chain ML is not feasible for performance
+// reasons. The blockchain is for settlement and verification only.
+// =============================================================================
 
-pub const VECTOR_SIMILARITY_PRECOMPILE: Address = Address::new([
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x10, 0x01,
-]);
-
-pub const INTENT_PARSER_PRECOMPILE: Address = Address::new([
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x10, 0x02,
-]);
-
+/// SVM Router precompile for Solana VM program execution
+/// Used for cross-chain operations with Solana ecosystem
 pub const SVM_ROUTER_PRECOMPILE: Address = Address::new([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x10, 0x03,
 ]);
 
+/// L2 Message Passer precompile for L1↔L2 communication
+/// Handles deposits, withdrawals, state roots, and cross-layer calls
 pub const L2_MESSAGE_PASSER_PRECOMPILE: Address = Address::new([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x42, 0x00,
@@ -49,29 +46,6 @@ pub struct PrecompileResult {
     pub gas_used: u64,
     pub success: bool,
     pub revert_reason: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AiInferenceInput {
-    pub model_id: u32,
-    pub input_data: Bytes,
-    pub max_tokens: u32,
-    pub temperature: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VectorSimilarityInput {
-    pub query_vector: Vec<f32>,
-    pub collection_id: u32,
-    pub top_k: u32,
-    pub threshold: f32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IntentParserInput {
-    pub raw_intent: String,
-    pub context: Option<Bytes>,
-    pub max_steps: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
