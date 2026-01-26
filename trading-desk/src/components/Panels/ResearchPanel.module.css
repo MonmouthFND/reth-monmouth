@@ -1,0 +1,266 @@
+/*
+ * Research Panel
+ *
+ * Shows research agent status, current job, and last analysis
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  padding: var(--space-4);
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.agentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--magenta-9), #ff0066);
+  background: linear-gradient(135deg, #2a1a2e, #3a2040);
+  border-radius: var(--radius-md);
+  color: var(--magenta-10);
+}
+
+.headerText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--gray-12);
+}
+
+/* Status */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statusIcon {
+  font-size: var(--text-xs);
+  color: var(--status-color);
+}
+
+.statusLabel {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wider);
+  color: var(--status-color);
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.did {
+  font-size: var(--text-xs);
+  color: var(--gray-10);
+  background: var(--gray-3);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stats row */
+.statsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.balance {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-12);
+}
+
+.earnings {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--profit);
+  text-shadow: 0 0 10px var(--profit-muted);
+}
+
+.jobCount {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-12);
+}
+
+/* Current job */
+.currentJob {
+  margin-top: auto;
+  padding: var(--space-3);
+  background: var(--gray-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--cyan-6);
+}
+
+.jobHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.jobLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--cyan-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.jobPayment {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-11);
+  background: var(--gray-4);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.jobDescription {
+  font-size: var(--text-sm);
+  color: var(--gray-11);
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.progressContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.progressTrack {
+  flex: 1;
+  height: 4px;
+  background: var(--gray-5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan-7), var(--cyan-9));
+  border-radius: 2px;
+}
+
+.progressPercent {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--cyan-9);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Last result */
+.lastResult {
+  margin-top: auto;
+  padding: var(--space-3);
+  background: var(--gray-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-5);
+}
+
+.resultHeader {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-2);
+}
+
+.resultContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sentiment {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  border-radius: var(--radius-sm);
+}
+
+.sentiment.bullish {
+  background: var(--profit-bg);
+  color: var(--profit);
+  border: 1px solid var(--profit-muted);
+}
+
+.sentiment.bearish {
+  background: var(--loss-bg);
+  color: var(--loss);
+  border: 1px solid var(--loss-muted);
+}
+
+.sentiment.neutral {
+  background: var(--gray-4);
+  color: var(--gray-11);
+  border: 1px solid var(--gray-6);
+}
+
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.confidenceLabel {
+  font-size: var(--text-xs);
+  color: var(--gray-9);
+}
+
+.confidenceValue {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-12);
+}
+
+.recommendation {
+  font-size: var(--text-sm);
+  color: var(--cyan-9);
+  font-weight: var(--font-weight-medium);
+}

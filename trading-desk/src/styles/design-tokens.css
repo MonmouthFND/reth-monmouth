@@ -1,0 +1,294 @@
+/*
+ * TRADING DESK DESIGN SYSTEM
+ *
+ * Aesthetic: Cyberpunk Terminal meets Luxury Finance
+ * Inspired by: Bloomberg Terminal, Linear, Raycast
+ *
+ * Skills Applied:
+ * - emil-design-engineering: animations, z-index scale, hairline borders
+ * - typography-mastery: 1.25 ratio scale, paired line heights
+ * - frontend-design: bold aesthetic, distinctive character
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════
+   * COLOR SYSTEM - Deep blacks with cyan/magenta accents
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  /* Base grays - rich blacks, not flat */
+  --gray-1: #0a0a0b;
+  --gray-2: #0f0f11;
+  --gray-3: #141416;
+  --gray-4: #1a1a1d;
+  --gray-5: #222225;
+  --gray-6: #2a2a2e;
+  --gray-7: #333338;
+  --gray-8: #444449;
+  --gray-9: #666670;
+  --gray-10: #8888a0;
+  --gray-11: #b0b0c0;
+  --gray-12: #ededf0;
+
+  /* Primary - Egyptian Blue */
+  --blue-1: #050a1a;
+  --blue-2: #081030;
+  --blue-3: #0c1850;
+  --blue-4: #0e2070;
+  --blue-5: #102890;
+  --blue-6: #1034A6;
+  --blue-7: #2048b8;
+  --blue-8: #3060cc;
+  --blue-9: #1034A6;
+  --blue-10: #4070d0;
+  --blue-11: #6090e0;
+  --blue-12: #a0c0f0;
+
+  /* Accent - Bubblegum Fizz (Pink) for highlights */
+  --pink-9: #FF66CC;
+  --pink-10: #ff85d9;
+  --pink-11: #ffa3e5;
+  --pink-muted: #FF66CC40;
+  --pink-bg: #FF66CC15;
+
+  /* Semantic - Trading colors using brand palette */
+  --profit: #82D173;
+  --profit-muted: #82D17340;
+  --profit-bg: #82D17315;
+  --loss: #FF66CC;
+  --loss-muted: #FF66CC40;
+  --loss-bg: #FF66CC15;
+  --warning: #ffaa00;
+  --warning-bg: #ffaa0015;
+
+  /* Blocked/Error state */
+  --blocked: #ff2244;
+  --blocked-glow: #ff224480;
+
+  /* ═══════════════════════════════════════════════════════════════════
+   * TYPOGRAPHY - Outfit (display) + JetBrains Mono (data)
+   * Scale: 1.25 (Major Third) - versatile for product UI
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* Type scale with paired line heights (typography-mastery) */
+  --text-2xs: 0.64rem;    /* 10.24px */
+  --leading-2xs: 1rem;
+
+  --text-xs: 0.8rem;      /* 12.8px */
+  --leading-xs: 1.125rem;
+
+  --text-sm: 0.875rem;    /* 14px */
+  --leading-sm: 1.25rem;
+
+  --text-base: 1rem;      /* 16px */
+  --leading-base: 1.5rem;
+
+  --text-lg: 1.25rem;     /* 20px */
+  --leading-lg: 1.75rem;
+
+  --text-xl: 1.563rem;    /* 25px */
+  --leading-xl: 2rem;
+
+  --text-2xl: 1.953rem;   /* 31.25px */
+  --leading-2xl: 2.25rem;
+
+  --text-3xl: 2.441rem;   /* 39px */
+  --leading-3xl: 2.75rem;
+
+  /* Font weights - 3 max (typography-mastery) */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+
+  /* Letter spacing by size */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.05em;
+
+  /* ═══════════════════════════════════════════════════════════════════
+   * SPACING & LAYOUT
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 3rem;      /* 48px */
+  --space-8: 4rem;      /* 64px */
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* ═══════════════════════════════════════════════════════════════════
+   * Z-INDEX SCALE (emil-design-engineering)
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-tooltip: 400;
+  --z-toast: 500;
+
+  /* ═══════════════════════════════════════════════════════════════════
+   * ANIMATIONS (emil-design-engineering)
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  /* Easing curves */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+
+  /* Durations */
+  --duration-fast: 100ms;
+  --duration-normal: 150ms;
+  --duration-slow: 250ms;
+  --duration-enter: 200ms;
+
+  /* ═══════════════════════════════════════════════════════════════════
+   * BORDERS (emil-design-engineering)
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  --border-hairline: 1px;
+  --border-color: var(--gray-5);
+  --border-color-subtle: var(--gray-4);
+
+  @media only screen and (min-device-pixel-ratio: 2),
+    only screen and (min-resolution: 192dpi) {
+    --border-hairline: 0.5px;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+   * EFFECTS
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  /* Shadows - using box-shadow for borders (emil) */
+  --shadow-border: 0 0 0 1px var(--border-color);
+  --shadow-border-subtle: 0 0 0 1px var(--border-color-subtle);
+
+  /* Glow effects */
+  --glow-blue: 0 0 20px var(--blue-9), 0 0 40px rgba(16, 52, 166, 0.3);
+  --glow-profit: 0 0 20px var(--profit), 0 0 40px rgba(130, 209, 115, 0.3);
+  --glow-loss: 0 0 20px var(--loss), 0 0 40px rgba(255, 102, 204, 0.3);
+  --glow-blocked: 0 0 30px var(--blocked), 0 0 60px var(--blocked-glow);
+  --glow-pink: 0 0 20px var(--pink-9), 0 0 40px rgba(255, 102, 204, 0.3);
+
+  /* Noise texture overlay */
+  --noise-opacity: 0.03;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * BASE STYLES
+ * ═══════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--gray-12);
+  background: var(--gray-1);
+
+  /* Antialiased rendering (typography-mastery) */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings with balanced text wrap */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  text-wrap: balance;
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Monospace for data (trading numbers) */
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; /* Prevents layout shift (emil) */
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * REDUCED MOTION (emil-design-engineering)
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * UTILITY CLASSES
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* Profit/Loss colors */
+.text-profit { color: var(--profit); }
+.text-loss { color: var(--loss); }
+.text-muted { color: var(--gray-9); }
+.text-secondary { color: var(--gray-11); }
+
+/* Glow states */
+.glow-profit { box-shadow: var(--glow-profit); }
+.glow-loss { box-shadow: var(--glow-loss); }
+.glow-blocked {
+  box-shadow: var(--glow-blocked);
+  animation: pulse-blocked 1s ease-in-out infinite;
+}
+
+@keyframes pulse-blocked {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Scanline effect for terminal aesthetic */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* Noise texture */
+.noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: var(--noise-opacity);
+  pointer-events: none;
+}
