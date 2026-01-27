@@ -1,8 +1,8 @@
 # The Autonomous Trading Desk - Demo Spec
 
-**Status**: Planning
+**Status**: Active
 **Target**: Pre-seed pitch demo
-**Branch**: `feature/trading-desk-demo` (to be created)
+**Branch**: `feature/trading-desk-demo`
 
 ---
 

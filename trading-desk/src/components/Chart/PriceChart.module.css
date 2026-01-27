@@ -1,0 +1,152 @@
+/*
+ * Price Chart
+ *
+ * TradingView Lightweight Charts with cyberpunk styling
+ */
+
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header overlay */
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-4);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.leftSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.symbolRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.symbol {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-12);
+  letter-spacing: var(--tracking-tight);
+}
+
+.price {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-12);
+  letter-spacing: var(--tracking-tight);
+}
+
+.change {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.change.up {
+  color: var(--profit);
+  background: var(--profit-bg);
+}
+
+.change.down {
+  color: var(--loss);
+  background: var(--loss-bg);
+}
+
+/* Legend - under asset name */
+.legend {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--gray-10);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Chart area */
+.chart {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* Custom trade markers */
+.tradeMarker {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.buyMarker {
+  background: rgba(130, 209, 115, 0.2);
+  border: 1px solid rgba(130, 209, 115, 0.5);
+  color: #82D173;
+}
+
+.sellMarker {
+  background: rgba(255, 102, 204, 0.2);
+  border: 1px solid rgba(255, 102, 204, 0.5);
+  color: #FF66CC;
+}
+
+.markerIcon {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.markerLabel {
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.markerAmount {
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Bottom glow effect */
+.bottomGlow {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  pointer-events: none;
+}

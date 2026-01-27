@@ -8,6 +8,21 @@ Monmouth is an agent-aware Layer 2 blockchain built on Reth v1.8.1, designed for
 
 **Key Architecture Decision**: AI/ML operations happen **off-chain** via LLM API calls and tool use. The blockchain handles settlement and verification only. On-chain ML is not feasible—even local MLX setups are slow, putting ML algorithms into blockchain consensus is impractical.
 
+## Branding & Logo
+
+The official Monmouth logo is the "mmjelly" jellyfish logo.
+
+**Logo files:**
+- `trading-desk/public/mmjelly-black.png` - Main logo (black, for light backgrounds)
+- `trading-desk/public/favicon.png` - 64x64 favicon version
+
+**Source:** `/Users/dez/Downloads/mmjelly-black.png`
+
+**Usage:**
+- On **dark backgrounds** (default for Monmouth UI): use CSS `filter: invert(1)` to make it white
+- On **light backgrounds**: use as-is (black logo)
+- Example: `<img src="/mmjelly-black.png" style={{ filter: "invert(1)" }} />` for dark mode
+
 ## Build and Development Commands
 
 ```bash

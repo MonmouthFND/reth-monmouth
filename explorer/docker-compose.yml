@@ -1,0 +1,139 @@
+services:
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: blockscout
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  blockscout:
+    image: blockscout/blockscout:latest
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "bin/blockscout eval 'Elixir.Explorer.ReleaseTasks.create_and_migrate()' && bin/blockscout start"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/blockscout
+      ECTO_USE_SSL: "false"
+
+      # Redis
+      ACCOUNT_REDIS_URL: redis://redis:6379
+
+      # Chain config
+      ETHEREUM_JSONRPC_VARIANT: erigon
+      ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545
+      ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8546
+      ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545
+
+      # Network info
+      CHAIN_ID: "7750"
+      NETWORK: Monmouth L2
+      SUBNETWORK: Monmouth Testnet
+      COIN: ETH
+      COIN_NAME: Ether
+
+      # Features
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "true"
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: "true"
+      DISABLE_EXCHANGE_RATES: "true"
+      DISABLE_KNOWN_TOKENS: "true"
+      SHOW_TXS_CHART: "true"
+
+      # First block to index (skip genesis if problematic)
+      FIRST_BLOCK: "0"
+
+      # Logging
+      BLOCKSCOUT_PROTOCOL: http
+
+      # Block time
+      BLOCK_TRANSFORMER: base
+
+      # API
+      API_V2_ENABLED: "true"
+
+      # Secrets
+      SECRET_KEY_BASE: VTIB3uHDNbvrY0+60470E9fK8Dq2/5oDZ8Cxa83C9tC+LCqlsJuJsPF5sLT6xOxS
+
+      # Port
+      PORT: 4000
+
+    ports:
+      - "4000:4000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    image: ghcr.io/blockscout/frontend:latest
+    restart: always
+    depends_on:
+      - blockscout
+    environment:
+      NEXT_PUBLIC_APP_HOST: localhost
+      NEXT_PUBLIC_APP_PORT: "3002"
+      NEXT_PUBLIC_APP_PROTOCOL: http
+      NEXT_PUBLIC_API_HOST: localhost
+      NEXT_PUBLIC_API_PORT: "4000"
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_NETWORK_NAME: "Monmouth L2"
+      NEXT_PUBLIC_NETWORK_SHORT_NAME: "Monmouth"
+      NEXT_PUBLIC_NETWORK_ID: "7750"
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: "Ether"
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: "ETH"
+      NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: "18"
+      NEXT_PUBLIC_API_BASE_PATH: "/"
+      NEXT_PUBLIC_HOMEPAGE_CHARTS: "['daily_txs']"
+      NEXT_PUBLIC_IS_TESTNET: "true"
+      NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: ws
+      NEXT_PUBLIC_STATS_API_HOST: http://localhost:4000
+    ports:
+      - "3002:3000"
+
+  # Optional: Metrics & Monitoring
+  # Uncomment to enable Prometheus + Grafana
+  #
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   restart: always
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   restart: always
+  #   depends_on:
+  #     - prometheus
+  #   ports:
+  #     - "3003:3000"
+  #   environment:
+  #     GF_SECURITY_ADMIN_PASSWORD: admin
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+
+volumes:
+  postgres-data:
+  # grafana-data:

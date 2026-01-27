@@ -1,0 +1,21 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+
+# Optimizer settings
+optimizer = true
+optimizer_runs = 200
+
+# Testing
+fuzz = { runs = 256, max_test_rejects = 65536 }
+invariant = { runs = 256, depth = 15 }
+
+# Gas reporting
+gas_reports = ["MonmouthEscrow"]
+
+# Monmouth L2 deployment
+[rpc_endpoints]
+monmouth_local = "http://localhost:8545"
+monmouth_testnet = "${MONMOUTH_TESTNET_RPC_URL}"

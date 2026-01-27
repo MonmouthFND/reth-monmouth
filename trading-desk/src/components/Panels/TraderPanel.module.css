@@ -1,0 +1,327 @@
+/*
+ * Trader Panel
+ *
+ * Shows agent identity, balance, P&L, and policy constraints
+ */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  padding: var(--space-4);
+  overflow: hidden;
+  transition: box-shadow var(--duration-slow) var(--ease-out-cubic);
+}
+
+.panel.blocked {
+  box-shadow:
+    var(--shadow-border),
+    var(--glow-blocked);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.agentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--cyan-4), var(--cyan-3));
+  border-radius: var(--radius-md);
+  color: var(--cyan-11);
+}
+
+.headerText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--gray-12);
+}
+
+/* Status indicator */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-color);
+  box-shadow: 0 0 8px var(--status-color);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.statusLabel {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wider);
+  color: var(--gray-10);
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.value {
+  font-size: var(--text-sm);
+  color: var(--gray-12);
+}
+
+.did {
+  font-size: var(--text-xs);
+  color: var(--gray-10);
+  background: var(--gray-3);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Balance */
+.balanceRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.balance {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-12);
+}
+
+.balanceUsd {
+  font-size: var(--text-xs);
+  color: var(--gray-9);
+}
+
+/* Stats row */
+.statsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pnl {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.pnl.profit {
+  color: var(--profit);
+  text-shadow: 0 0 10px var(--profit-muted);
+}
+
+.pnl.loss {
+  color: var(--loss);
+  text-shadow: 0 0 10px var(--loss-muted);
+}
+
+.tradeCount {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-12);
+}
+
+/* Policy section */
+.policySection {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline) solid var(--gray-5);
+}
+
+.policyHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.policyIcon {
+  font-size: var(--text-sm);
+}
+
+.policyTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--gray-10);
+}
+
+.policyGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.policyItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.policyLabel {
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+}
+
+.policyValue {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-12);
+}
+
+/* Usage progress */
+.usageSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.usageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.usageLabel {
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.usagePercent {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--cyan-9);
+}
+
+.usagePercent.warning {
+  color: var(--warning);
+}
+
+.progressTrack {
+  position: relative;
+  height: 6px;
+  background: var(--gray-4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan-7), var(--cyan-9));
+  border-radius: 3px;
+  transition: background var(--duration-slow) var(--ease-out-cubic);
+}
+
+.progressBar.nearLimit {
+  background: linear-gradient(90deg, var(--warning), #ff6600);
+}
+
+.dangerZone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 0, 0, 0.1) 2px,
+    rgba(255, 0, 0, 0.1) 4px
+  );
+}
+
+.usageValues {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--gray-10);
+}
+
+.usageDivider {
+  color: var(--gray-7);
+}
+
+/* Blocked overlay */
+.blockedOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: rgba(255, 34, 68, 0.15);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.blockedIcon {
+  font-size: var(--text-3xl);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.blockedText {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--blocked);
+  text-shadow: 0 0 20px var(--blocked);
+}
