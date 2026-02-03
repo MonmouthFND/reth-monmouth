@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DemoGrid } from './components/Layout/DemoGrid';
-import { PriceChart, TradeMarker } from './components/Chart/PriceChart';
+import { PriceChart } from './components/Chart/PriceChart';
 import { TraderPanel } from './components/Panels/TraderPanel';
 import { ActivityFeed, ActivityItem } from './components/Panels/ActivityFeed';
 import { ResearchPanel } from './components/Panels/ResearchPanel';
 import { ReasoningPanel } from './components/Panels/ReasoningPanel';
 import { OpenClawPanel } from './components/Panels/OpenClawPanel';
-import { LineData, Time } from 'lightweight-charts';
 import {
   useChainStatus,
   useAgentBalances,
@@ -16,55 +15,7 @@ import {
   ESCROW_ADDRESS,
 } from './hooks/useMonmouth';
 import { useOpenClaw } from './hooks/useOpenClaw';
-
-// Generate mock price data
-function generatePriceData(): LineData[] {
-  const data: LineData[] = [];
-  const basePrice = 3200;
-  const now = Math.floor(Date.now() / 1000);
-
-  for (let i = 100; i >= 0; i--) {
-    const time = (now - i * 60) as Time;
-    const randomWalk = (Math.random() - 0.48) * 15;
-    const trend = (100 - i) * 0.3;
-    const price = basePrice + trend + randomWalk + Math.sin(i / 10) * 20;
-    data.push({ time, value: price });
-  }
-
-  return data;
-}
-
-// Generate trade markers from escrow events
-function generateTradeMarkers(priceData: LineData[]): TradeMarker[] {
-  if (priceData.length < 20) return [];
-
-  return [
-    {
-      time: priceData[priceData.length - 30]?.time || (0 as Time),
-      position: 'belowBar',
-      color: '#82D173',
-      shape: 'arrowUp',
-      text: '$65',
-      type: 'buy',
-    },
-    {
-      time: priceData[priceData.length - 15]?.time || (0 as Time),
-      position: 'aboveBar',
-      color: '#FF66CC',
-      shape: 'arrowDown',
-      text: '$67',
-      type: 'sell',
-    },
-    {
-      time: priceData[priceData.length - 5]?.time || (0 as Time),
-      position: 'belowBar',
-      color: '#82D173',
-      shape: 'arrowUp',
-      text: '$81',
-      type: 'buy',
-    },
-  ];
-}
+import { usePriceData, useTradeMarkers } from './hooks/usePriceData';
 
 export default function App() {
   // Chain state
@@ -76,11 +27,13 @@ export default function App() {
   // OpenClaw agent state
   const openClaw = useOpenClaw();
 
+  // Real price data from CoinGecko
+  const { priceData, currentPrice, priceChange24h, isLoading: priceLoading } = usePriceData();
+
+  // Trade markers derived from escrow events
+  const trades = useTradeMarkers(escrowEvents, priceData);
+
   // UI state
-  const [priceData, setPriceData] = useState<LineData[]>([]);
-  const [currentPrice, setCurrentPrice] = useState(3245.67);
-  const [priceChange, setPriceChange] = useState(2.3);
-  const [trades, setTrades] = useState<TradeMarker[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [reasoning, setReasoning] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -110,34 +63,6 @@ export default function App() {
       setActivities((prev) => [...newActivities, ...prev].slice(0, 20));
     }
   }, [escrowEvents]);
-
-  // Initialize price data
-  useEffect(() => {
-    const data = generatePriceData();
-    setPriceData(data);
-    setTrades(generateTradeMarkers(data));
-
-    // Simulate live price updates
-    const interval = setInterval(() => {
-      setPriceData((prev) => {
-        const lastTime = prev[prev.length - 1]?.time as number;
-        const lastValue = prev[prev.length - 1]?.value || 3200;
-        const newValue = lastValue + (Math.random() - 0.48) * 5;
-
-        const newData = [
-          ...prev.slice(1),
-          { time: (lastTime + 60) as Time, value: newValue },
-        ];
-
-        setCurrentPrice(newValue);
-        setPriceChange((prev) => prev + (Math.random() - 0.5) * 0.1);
-
-        return newData;
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Demo: Run the trading flow
   const runDemoFlow = useCallback(async () => {
@@ -239,6 +164,10 @@ export default function App() {
 
   // Initial reasoning text
   useEffect(() => {
+    const priceStatus = priceLoading
+      ? '⏳ Loading ETH price...'
+      : `📈 ETH/USD: $${currentPrice.toFixed(2)} (${priceChange24h >= 0 ? '+' : ''}${priceChange24h.toFixed(2)}%)`;
+
     if (chainStatus.connected) {
       setReasoning(
         `Connected to Monmouth L2 (Chain ID: ${chainStatus.chainId})\n` +
@@ -246,6 +175,8 @@ export default function App() {
           `Escrow Contract: ${ESCROW_ADDRESS}\n` +
           `Total Escrows: ${chainStatus.escrowCount}\n` +
           `Total Locked: ${chainStatus.totalLocked} ETH\n\n` +
+          `${priceStatus}\n` +
+          `(Live data from CoinGecko)\n\n` +
           `Trader Agent: ${TEST_ACCOUNTS.trader.address.slice(0, 18)}...\n` +
           `  Balance: ${balances.trader.slice(0, 8)} ETH\n\n` +
           `Research Agent: ${TEST_ACCOUNTS.research.address.slice(0, 18)}...\n` +
@@ -255,12 +186,13 @@ export default function App() {
     } else {
       setReasoning(
         `⏳ Connecting to Monmouth L2...\n\n` +
+          `${priceStatus}\n\n` +
           `Make sure the L2 node is running:\n` +
           `  ./scripts/start_dev.sh\n\n` +
           `Expected RPC: http://localhost:8545`
       );
     }
-  }, [chainStatus, balances]);
+  }, [chainStatus, balances, currentPrice, priceChange24h, priceLoading]);
 
   // Build trader agent data
   const traderAgent = {
@@ -310,7 +242,7 @@ export default function App() {
         <PriceChart
           symbol="ETH/USD"
           currentPrice={currentPrice}
-          priceChange24h={priceChange}
+          priceChange24h={priceChange24h}
           priceData={priceData}
           trades={trades}
         />
