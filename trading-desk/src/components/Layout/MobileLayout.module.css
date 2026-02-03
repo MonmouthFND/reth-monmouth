@@ -1,0 +1,150 @@
+/**
+ * MobileLayout Styles
+ *
+ * Full-screen chart with bottom sheet pattern.
+ */
+
+.container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--gray-1);
+  overflow: hidden;
+}
+
+/* Background gradient */
+.bgGradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255, 0, 170, 0.05), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Price Header */
+.priceHeader {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(180deg, var(--gray-2) 0%, transparent 100%);
+  flex-shrink: 0;
+}
+
+.priceLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.symbol {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-10);
+  letter-spacing: var(--tracking-wider);
+}
+
+.price {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-mono);
+  color: var(--gray-12);
+  letter-spacing: var(--tracking-tight);
+}
+
+.change {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-mono);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.change.up {
+  color: var(--profit);
+  background: var(--profit-bg);
+}
+
+.change.down {
+  color: var(--loss);
+  background: var(--loss-bg);
+}
+
+/* Chart Container */
+.chartContainer {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  /* Leave room for collapsed bottom sheet (140px) */
+  padding-bottom: 140px;
+}
+
+.chartContainer > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* Panel Container inside Bottom Sheet */
+.panelContainer {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panelContainer > * {
+  height: 100%;
+}
+
+/* Status Summary (collapsed state) */
+.statusSummary {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: var(--space-2) 0;
+}
+
+.statusItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.statusValue {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-mono);
+  color: var(--gray-12);
+}
+
+.statusValue.connected {
+  color: var(--profit);
+  text-shadow: 0 0 8px var(--profit);
+}
+
+.statusLabel {
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.divider {
+  width: 1px;
+  height: 32px;
+  background: var(--gray-5);
+}
+
+/* Hide bottom sheet on desktop */
+@media (min-width: 901px) {
+  .container {
+    display: none;
+  }
+}

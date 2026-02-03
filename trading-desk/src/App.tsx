@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DemoGrid } from './components/Layout/DemoGrid';
+import { MobileLayout } from './components/Layout/MobileLayout';
 import { PriceChart } from './components/Chart/PriceChart';
 import { TraderPanel } from './components/Panels/TraderPanel';
 import { ActivityFeed, ActivityItem } from './components/Panels/ActivityFeed';
@@ -16,8 +17,12 @@ import {
 } from './hooks/useMonmouth';
 import { useOpenClaw } from './hooks/useOpenClaw';
 import { usePriceData, useTradeMarkers } from './hooks/usePriceData';
+import { useIsMobile } from './hooks/useMediaQuery';
 
 export default function App() {
+  // Responsive layout detection
+  const isMobile = useIsMobile();
+
   // Chain state
   const chainStatus = useChainStatus();
   const { balances, refresh: refreshBalances } = useAgentBalances();
@@ -236,55 +241,96 @@ export default function App() {
   const allActivities =
     activities.length > 0 ? activities : [demoActivity];
 
+  // Shared components
+  const chartComponent = (
+    <PriceChart
+      symbol="ETH/USD"
+      currentPrice={currentPrice}
+      priceChange24h={priceChange24h}
+      priceData={priceData}
+      trades={trades}
+    />
+  );
+
+  const traderPanelComponent = <TraderPanel agent={traderAgent} />;
+
+  const activityFeedComponent = (
+    <ActivityFeed
+      activities={allActivities}
+      stats={{
+        trades: Number(chainStatus.escrowCount),
+        pnl: 12.45,
+        blocked: 0,
+      }}
+    />
+  );
+
+  const researchPanelComponent = <ResearchPanel agent={researchAgent} />;
+
+  const reasoningPanelComponent = (
+    <ReasoningPanel
+      text={reasoning}
+      isThinking={isThinking}
+      decision={
+        chainStatus.connected
+          ? {
+              action: 'demo',
+              amount: 'Run Demo',
+              reason: 'Execute full escrow flow',
+            }
+          : undefined
+      }
+      onAction={runDemoFlow}
+    />
+  );
+
+  const openClawPanelComponent = (
+    <OpenClawPanel
+      agent={openClaw.agent}
+      onApprove={openClaw.approveRequest}
+      onReject={openClaw.rejectRequest}
+      onSuspend={openClaw.suspendAgent}
+      onResume={openClaw.resumeAgent}
+      onSimulateApproval={openClaw.simulateApprovalRequest}
+    />
+  );
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <MobileLayout
+        chart={chartComponent}
+        traderPanel={traderPanelComponent}
+        activityFeed={activityFeedComponent}
+        researchPanel={researchPanelComponent}
+        reasoningPanel={reasoningPanelComponent}
+        openClawPanel={openClawPanelComponent}
+        priceHeader={{
+          symbol: 'ETH/USD',
+          price: `$${currentPrice.toFixed(2)}`,
+          change: `${Math.abs(priceChange24h).toFixed(2)}%`,
+          isPositive: priceChange24h >= 0,
+        }}
+        status={{
+          connected: chainStatus.connected,
+          balance: `${balances.trader.slice(0, 6)} ETH`,
+          escrowCount: Number(chainStatus.escrowCount),
+        }}
+        onRunDemo={runDemoFlow}
+        isDemoDisabled={!chainStatus.connected || isThinking}
+      />
+    );
+  }
+
+  // Desktop layout
   return (
     <DemoGrid
-      chart={
-        <PriceChart
-          symbol="ETH/USD"
-          currentPrice={currentPrice}
-          priceChange24h={priceChange24h}
-          priceData={priceData}
-          trades={trades}
-        />
-      }
-      traderPanel={<TraderPanel agent={traderAgent} />}
-      activityFeed={
-        <ActivityFeed
-          activities={allActivities}
-          stats={{
-            trades: Number(chainStatus.escrowCount),
-            pnl: 12.45,
-            blocked: 0,
-          }}
-        />
-      }
-      researchPanel={<ResearchPanel agent={researchAgent} />}
-      reasoningPanel={
-        <ReasoningPanel
-          text={reasoning}
-          isThinking={isThinking}
-          decision={
-            chainStatus.connected
-              ? {
-                  action: 'demo',
-                  amount: 'Run Demo',
-                  reason: 'Execute full escrow flow',
-                }
-              : undefined
-          }
-          onAction={runDemoFlow}
-        />
-      }
-      openClawPanel={
-        <OpenClawPanel
-          agent={openClaw.agent}
-          onApprove={openClaw.approveRequest}
-          onReject={openClaw.rejectRequest}
-          onSuspend={openClaw.suspendAgent}
-          onResume={openClaw.resumeAgent}
-          onSimulateApproval={openClaw.simulateApprovalRequest}
-        />
-      }
+      chart={chartComponent}
+      traderPanel={traderPanelComponent}
+      activityFeed={activityFeedComponent}
+      researchPanel={researchPanelComponent}
+      reasoningPanel={reasoningPanelComponent}
+      openClawPanel={openClawPanelComponent}
     />
   );
 }

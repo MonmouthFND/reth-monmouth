@@ -325,3 +325,50 @@
   color: var(--blocked);
   text-shadow: 0 0 20px var(--blocked);
 }
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .panel {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .header {
+    gap: var(--space-2);
+  }
+
+  .agentIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .agentIcon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .title {
+    font-size: var(--text-xs);
+  }
+
+  .balance {
+    font-size: var(--text-base);
+  }
+
+  .pnl,
+  .tradeCount {
+    font-size: var(--text-sm);
+  }
+
+  .policySection {
+    padding-top: var(--space-3);
+  }
+
+  .policyGrid {
+    gap: var(--space-2);
+  }
+
+  .usageSection {
+    gap: var(--space-1);
+  }
+}

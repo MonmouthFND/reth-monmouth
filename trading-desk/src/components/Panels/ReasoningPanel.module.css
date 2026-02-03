@@ -282,3 +282,55 @@
   background: linear-gradient(to top, var(--gray-2), transparent);
   pointer-events: none;
 }
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .header {
+    padding: var(--space-3);
+    padding-left: calc(var(--space-3) + 4px);
+    gap: var(--space-2);
+  }
+
+  .title {
+    font-size: var(--text-xs);
+  }
+
+  .content {
+    padding: var(--space-3);
+    padding-left: calc(var(--space-3) + 4px);
+  }
+
+  .textArea {
+    font-size: var(--text-xs);
+    line-height: 1.6;
+  }
+
+  .decision {
+    gap: var(--space-2);
+    padding: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .decisionIcon {
+    width: 28px;
+    height: 28px;
+    font-size: var(--text-base);
+  }
+
+  .decisionAction {
+    font-size: var(--text-xs);
+    gap: var(--space-1);
+  }
+
+  .decisionAmount {
+    font-size: var(--text-2xs);
+  }
+
+  .decisionReason {
+    font-size: var(--text-2xs);
+  }
+
+  .fadeBottom {
+    height: 40px;
+  }
+}

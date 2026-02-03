@@ -483,3 +483,102 @@
   font-size: var(--text-sm);
   color: var(--gray-9);
 }
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .panel {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .logo {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .title {
+    font-size: var(--text-xs);
+  }
+
+  .version {
+    font-size: 10px;
+    padding: 2px var(--space-1);
+  }
+
+  .section {
+    gap: var(--space-2);
+  }
+
+  .sectionTitle {
+    font-size: 10px;
+  }
+
+  .budgetGrid {
+    gap: var(--space-2);
+  }
+
+  .budgetValue {
+    font-size: var(--text-xs);
+  }
+
+  .metricsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  .metricItem {
+    padding: var(--space-2);
+  }
+
+  .metricValue {
+    font-size: var(--text-xs);
+  }
+
+  .metricLabel {
+    font-size: 9px;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+  }
+
+  .controlBtn {
+    padding: var(--space-2);
+    font-size: var(--text-2xs);
+  }
+
+  .approvalCard {
+    padding: var(--space-2);
+  }
+
+  .approvalAmount {
+    font-size: var(--text-sm);
+  }
+
+  .approvalActions {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .approvalBtn {
+    padding: var(--space-2);
+  }
+}
+
+@media (max-width: 400px) {
+  .metricsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .budgetGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

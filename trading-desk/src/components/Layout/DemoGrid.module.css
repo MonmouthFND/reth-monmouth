@@ -12,6 +12,13 @@
   background: var(--gray-1);
 }
 
+/* Hide desktop layout on mobile - MobileLayout handles it */
+@media (max-width: 900px) {
+  .container {
+    display: none;
+  }
+}
+
 /* Subtle gradient background */
 .bgGradient {
   position: absolute;
@@ -222,19 +229,160 @@
 }
 
 /* Responsive adjustments */
+
+/* Large desktop */
 @media (max-width: 1400px) {
   .grid {
     grid-template-columns: 2.5fr 1fr;
   }
 }
 
+/* Small desktop / Large tablet */
 @media (max-width: 1200px) {
   .grid {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: auto 1fr;
+  }
+
+  .mainContent {
+    grid-template-rows: auto auto;
+  }
+
+  .sidebarContainer {
+    order: -1; /* Move tabs to top on tablet */
   }
 
   .reasoningArea {
-    height: 300px;
+    max-height: 350px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .container {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .mainContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .chartArea {
+    min-height: 300px;
+    order: 1;
+  }
+
+  .traderArea {
+    min-height: auto;
+    order: 3;
+  }
+
+  .activityArea {
+    min-height: 250px;
+    order: 4;
+  }
+
+  .researchArea {
+    min-height: auto;
+    order: 5;
+  }
+
+  .sidebarContainer {
+    order: 2;
+  }
+
+  .reasoningArea {
+    max-height: 400px;
+  }
+
+  .tabBar {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+
+  .sidebarContainer .reasoningArea {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .container {
+    overflow-x: hidden;
+  }
+
+  .grid {
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .bgGrid {
+    display: none; /* Hide grid pattern on mobile for performance */
+  }
+
+  .chartArea {
+    min-height: 250px;
+  }
+
+  .activityArea {
+    min-height: 200px;
+  }
+
+  .reasoningArea {
+    max-height: 350px;
+  }
+
+  .tabBar {
+    padding: var(--space-1);
+  }
+
+  .tab {
+    padding: var(--space-2);
+    font-size: var(--text-2xs);
+  }
+
+  .tabIcon {
+    font-size: var(--text-xs);
+  }
+
+  .tabLabel {
+    display: none; /* Hide tab labels on very small screens */
+  }
+}
+
+/* Very small mobile */
+@media (max-width: 400px) {
+  .grid {
+    padding: var(--space-1);
+    gap: var(--space-1);
+  }
+
+  .chartArea {
+    min-height: 200px;
+  }
+
+  .activityArea {
+    min-height: 180px;
+  }
+
+  .reasoningArea {
+    max-height: 300px;
   }
 }

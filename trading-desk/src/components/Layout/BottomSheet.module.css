@@ -1,0 +1,221 @@
+/**
+ * BottomSheet Styles
+ *
+ * Mobile-native bottom sheet with smooth animations.
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: black;
+  z-index: 40;
+  pointer-events: auto;
+}
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--gray-2);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow:
+    0 -4px 20px rgba(0, 0, 0, 0.3),
+    0 -1px 0 rgba(255, 255, 255, 0.05);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* Drag Handle Area */
+.handleArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.handleArea:active {
+  cursor: grabbing;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  background: var(--gray-6);
+  border-radius: 2px;
+  transition: background var(--duration-fast) ease;
+}
+
+.handleArea:hover .handle {
+  background: var(--gray-7);
+}
+
+.handleHint {
+  margin-top: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--gray-8);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--gray-4);
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-9);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out-cubic);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.tab:hover {
+  color: var(--gray-11);
+  background: var(--gray-3);
+}
+
+.tab.activeTab {
+  color: var(--gray-12);
+  background: var(--gray-4);
+}
+
+.tabIcon {
+  font-size: var(--text-base);
+  flex-shrink: 0;
+}
+
+.tabLabel {
+  letter-spacing: var(--tracking-wide);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.collapsedContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.expandedContent {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Action Button */
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-1);
+  background: linear-gradient(135deg, var(--cyan-9), var(--blue-9));
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out-cubic);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.actionButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.actionButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Status Summary (for collapsed state) */
+.statusSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.statusItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.statusValue {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-mono);
+  color: var(--gray-12);
+}
+
+.statusValue.profit {
+  color: var(--profit);
+}
+
+.statusValue.connected {
+  color: var(--cyan-9);
+}
+
+.statusLabel {
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+/* Divider */
+.divider {
+  width: 1px;
+  height: 32px;
+  background: var(--gray-5);
+}
