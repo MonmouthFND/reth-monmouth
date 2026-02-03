@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createChart, IChartApi, ISeriesApi, LineData, Time } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, LineData, Time, ColorType } from 'lightweight-charts';
 import styles from './PriceChart.module.css';
 
 export interface TradeMarker {
@@ -81,7 +81,7 @@ export function PriceChart({
       width: container.clientWidth,
       height: container.clientHeight,
       layout: {
-        background: { type: 'solid', color: 'transparent' },
+        background: { type: ColorType.Solid, color: 'transparent' },
         textColor: 'rgba(255, 255, 255, 0.5)',
         fontFamily: "'JetBrains Mono', monospace",
         fontSize: 11,

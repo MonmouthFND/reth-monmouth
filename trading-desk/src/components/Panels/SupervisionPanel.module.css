@@ -1,0 +1,365 @@
+/*
+ * Supervision Panel
+ *
+ * BEAM-style supervision tree visualization
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-4);
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.beamIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: var(--text-lg);
+  background: linear-gradient(135deg, var(--pink-bg), rgba(255, 102, 204, 0.1));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--pink-muted);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wider);
+  color: var(--gray-12);
+}
+
+.subtitle {
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* Strategy badge */
+.strategyBadge {
+  padding: var(--space-1) var(--space-2);
+  background: var(--gray-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-5);
+}
+
+.strategyLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--cyan-9);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* Supervisor node */
+.supervisorNode {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: linear-gradient(135deg, var(--gray-3), var(--gray-4));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-5);
+}
+
+.supervisorIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--blue-9);
+  border-radius: var(--radius-sm);
+  color: white;
+}
+
+.supervisorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.supervisorName {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--gray-12);
+}
+
+.supervisorMeta {
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+}
+
+/* Connection lines */
+.connectionLine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: var(--space-5);
+}
+
+.verticalLine {
+  width: 2px;
+  height: 16px;
+  background: linear-gradient(180deg, var(--gray-6), var(--gray-5));
+}
+
+.horizontalBranches {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.branch {
+  width: 24px;
+  height: 2px;
+  background: var(--gray-5);
+  position: relative;
+}
+
+.branch::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 8px;
+  background: var(--gray-5);
+}
+
+/* Agent list */
+.agentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Agent node */
+.agentNode {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--gray-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-5);
+  transition: all var(--duration-normal) var(--ease-out-cubic);
+}
+
+.agentNode:hover {
+  background: var(--gray-4);
+  border-color: var(--gray-6);
+}
+
+.agentNode.crashed {
+  border-color: var(--blocked);
+  box-shadow: 0 0 20px rgba(255, 34, 68, 0.15);
+  animation: crashPulse 1s ease-in-out infinite;
+}
+
+@keyframes crashPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.agentNode.restarting {
+  border-color: var(--cyan-9);
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.15);
+}
+
+/* Lifecycle indicator */
+.lifecycleIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--lifecycle-color);
+  color: var(--lifecycle-color);
+  flex-shrink: 0;
+}
+
+.lifecycleIcon {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.lifecycleIcon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Agent info */
+.agentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: 4px;
+}
+
+.agentName {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-12);
+}
+
+.agentType {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  padding: 2px 6px;
+  background: var(--gray-5);
+  border-radius: 4px;
+  color: var(--gray-10);
+}
+
+.agentMeta {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+}
+
+.metaIcon {
+  font-size: var(--text-xs);
+}
+
+/* Agent actions */
+.agentActions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--gray-4);
+  border: 1px solid var(--gray-5);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: all var(--duration-fast) var(--ease-out-cubic);
+}
+
+.actionBtn:hover {
+  background: var(--gray-5);
+  border-color: var(--gray-6);
+  transform: scale(1.05);
+}
+
+.actionBtn.restartBtn {
+  background: var(--profit-bg);
+  border-color: var(--profit-muted);
+  color: var(--profit);
+}
+
+.actionBtn.restartBtn:hover {
+  background: var(--profit-muted);
+}
+
+/* Crash overlay */
+.crashOverlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: var(--space-1);
+}
+
+.crashIcon {
+  font-size: var(--text-sm);
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--gray-5);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--gray-9);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legendDot.running {
+  background: var(--profit);
+  box-shadow: 0 0 6px var(--profit);
+}
+
+.legendDot.crashed {
+  background: var(--blocked);
+  box-shadow: 0 0 6px var(--blocked);
+}
+
+.legendDot.restarting {
+  background: var(--cyan-9);
+  box-shadow: 0 0 6px var(--cyan-9);
+  animation: blink 0.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

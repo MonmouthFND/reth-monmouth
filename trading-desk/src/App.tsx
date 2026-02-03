@@ -5,6 +5,7 @@ import { TraderPanel } from './components/Panels/TraderPanel';
 import { ActivityFeed, ActivityItem } from './components/Panels/ActivityFeed';
 import { ResearchPanel } from './components/Panels/ResearchPanel';
 import { ReasoningPanel } from './components/Panels/ReasoningPanel';
+import { OpenClawPanel } from './components/Panels/OpenClawPanel';
 import { LineData, Time } from 'lightweight-charts';
 import {
   useChainStatus,
@@ -14,6 +15,7 @@ import {
   TEST_ACCOUNTS,
   ESCROW_ADDRESS,
 } from './hooks/useMonmouth';
+import { useOpenClaw } from './hooks/useOpenClaw';
 
 // Generate mock price data
 function generatePriceData(): LineData[] {
@@ -71,6 +73,9 @@ export default function App() {
   const escrowEvents = useEscrowEvents();
   const escrowActions = useEscrowActions();
 
+  // OpenClaw agent state
+  const openClaw = useOpenClaw();
+
   // UI state
   const [priceData, setPriceData] = useState<LineData[]>([]);
   const [currentPrice, setCurrentPrice] = useState(3245.67);
@@ -79,7 +84,7 @@ export default function App() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [reasoning, setReasoning] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [currentEscrowId, setCurrentEscrowId] = useState<bigint | null>(null);
+  const [_currentEscrowId, setCurrentEscrowId] = useState<bigint | null>(null);
 
   // Convert escrow events to activity items
   useEffect(() => {
@@ -89,7 +94,7 @@ export default function App() {
         claimed: 'escrow_claimed',
         delivered: 'escrow_claimed',
         released: 'escrow_released',
-        expired: 'blocked',
+        expired: 'trade_blocked',
       };
 
       return {
@@ -147,16 +152,29 @@ export default function App() {
     try {
       // Step 1: Create escrow
       setReasoning((prev) => prev + `\n✓ Connected to chain ${chainStatus.chainId}\n`);
-      setReasoning((prev) => prev + `\nCreating escrow for market analysis...\n`);
+      setReasoning((prev) => prev + `\n🦞 OpenClaw agent initiating escrow creation...\n`);
       setReasoning((prev) => prev + `  Provider: ${TEST_ACCOUNTS.research.address.slice(0, 10)}...\n`);
       setReasoning((prev) => prev + `  Amount: 0.005 ETH\n`);
       setReasoning((prev) => prev + `  Timeout: 1 hour\n`);
+
+      // Start OpenClaw operation
+      openClaw.startOperation({
+        type: 'escrow_create',
+        description: 'Creating escrow for market analysis',
+        chain: 'evm',
+        estimatedCost: '0.005 ETH',
+      });
 
       const createTx = await escrowActions.create(
         'Analyze ETH/USD market sentiment',
         '0.005',
         3600
       );
+
+      // Complete OpenClaw operation
+      openClaw.completeOperation(`op-${Date.now()}`, createTx);
+      openClaw.simulateTransaction('escrow_create', '0.005 ETH');
+
       setReasoning((prev) => prev + `\n✓ Escrow created!\n  TX: ${createTx.slice(0, 18)}...\n`);
 
       // Get escrow ID from count
@@ -171,7 +189,13 @@ export default function App() {
       setReasoning((prev) => prev + `✓ Claimed! TX: ${claimTx.slice(0, 18)}...\n`);
 
       // Step 3: Research agent delivers
-      setReasoning((prev) => prev + `\n📊 Analyzing market...\n`);
+      setReasoning((prev) => prev + `\n📊 Analyzing market via x402 payment...\n`);
+      openClaw.startOperation({
+        type: 'research',
+        description: 'Market sentiment analysis',
+        chain: 'evm',
+        estimatedCost: '0.001 ETH',
+      });
       await new Promise((r) => setTimeout(r, 2000));
 
       setReasoning((prev) => prev + `\nMarket Analysis Results:\n`);
@@ -184,6 +208,7 @@ export default function App() {
         escrowId,
         'Bullish sentiment, 75% confidence, recommend BUY'
       );
+      openClaw.completeOperation(`op-${Date.now()}`, deliverTx);
       setReasoning((prev) => prev + `\n✓ Delivered! TX: ${deliverTx.slice(0, 18)}...\n`);
 
       // Step 4: Trader releases payment
@@ -191,6 +216,7 @@ export default function App() {
       await new Promise((r) => setTimeout(r, 500));
 
       const releaseTx = await escrowActions.release(escrowId);
+      openClaw.simulateTransaction('escrow_claim', '0.005 ETH');
       setReasoning((prev) => prev + `✓ Released! TX: ${releaseTx.slice(0, 18)}...\n`);
 
       // Refresh balances
@@ -198,6 +224,7 @@ export default function App() {
 
       setReasoning((prev) => prev + `\n════════════════════════════════════\n`);
       setReasoning((prev) => prev + `✅ Demo flow complete!\n`);
+      setReasoning((prev) => prev + `\n🦞 OpenClaw agent metrics updated\n`);
       setReasoning((prev) => prev + `\nNew balances:\n`);
       setReasoning((prev) => prev + `  Trader: ${balances.trader.slice(0, 8)} ETH\n`);
       setReasoning((prev) => prev + `  Research: ${balances.research.slice(0, 8)} ETH\n`);
@@ -208,7 +235,7 @@ export default function App() {
     } finally {
       setIsThinking(false);
     }
-  }, [chainStatus, escrowActions, refreshBalances, balances]);
+  }, [chainStatus, escrowActions, refreshBalances, balances, openClaw]);
 
   // Initial reasoning text
   useEffect(() => {
@@ -314,6 +341,16 @@ export default function App() {
               : undefined
           }
           onAction={runDemoFlow}
+        />
+      }
+      openClawPanel={
+        <OpenClawPanel
+          agent={openClaw.agent}
+          onApprove={openClaw.approveRequest}
+          onReject={openClaw.rejectRequest}
+          onSuspend={openClaw.suspendAgent}
+          onResume={openClaw.resumeAgent}
+          onSimulateApproval={openClaw.simulateApprovalRequest}
         />
       }
     />

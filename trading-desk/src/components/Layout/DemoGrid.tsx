@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import styles from './DemoGrid.module.css';
 
 interface DemoGridProps {
@@ -7,17 +7,18 @@ interface DemoGridProps {
   activityFeed: ReactNode;
   researchPanel: ReactNode;
   reasoningPanel: ReactNode;
+  openClawPanel?: ReactNode;
 }
 
 /**
  * Main dashboard grid layout
  *
- * Structure:
+ * Structure (with OpenClaw panel):
  * ┌──────────────────────────────────────────────┬────────────────┐
- * │              MAIN CONTENT (75%)              │ REASONING (25%)│
- * ├────────────────────────────┬─────────────────┤                │
- * │         CHART (75%)        │  TRADER (25%)   │  (full height) │
- * ├────────────────────────────┼─────────────────┤                │
+ * │              MAIN CONTENT (75%)              │ RIGHT SIDEBAR  │
+ * ├────────────────────────────┬─────────────────┤  [Reasoning]   │
+ * │         CHART (75%)        │  TRADER (25%)   │  [OpenClaw]    │
+ * ├────────────────────────────┼─────────────────┤  (tabs)        │
  * │       ACTIVITY (75%)       │ RESEARCH (25%)  │                │
  * └────────────────────────────┴─────────────────┴────────────────┘
  */
@@ -27,7 +28,11 @@ export function DemoGrid({
   activityFeed,
   researchPanel,
   reasoningPanel,
+  openClawPanel,
 }: DemoGridProps) {
+  const [activeTab, setActiveTab] = useState<'reasoning' | 'openclaw'>('reasoning');
+  const hasOpenClaw = !!openClawPanel;
+
   return (
     <div className={styles.container}>
       {/* Background effects */}
@@ -59,9 +64,33 @@ export function DemoGrid({
           </div>
         </div>
 
-        {/* Right side: Reasoning panel (25%, full height) */}
-        <div className={styles.reasoningArea}>
-          {reasoningPanel}
+        {/* Right side: Tabbed sidebar (25%, full height) */}
+        <div className={styles.sidebarContainer}>
+          {hasOpenClaw && (
+            <div className={styles.tabBar}>
+              <button
+                className={`${styles.tab} ${activeTab === 'reasoning' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('reasoning')}
+              >
+                <span className={styles.tabIcon}>🧠</span>
+                <span className={styles.tabLabel}>Reasoning</span>
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'openclaw' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('openclaw')}
+              >
+                <span className={styles.tabIcon}>🦞</span>
+                <span className={styles.tabLabel}>OpenClaw</span>
+              </button>
+            </div>
+          )}
+          <div className={styles.reasoningArea}>
+            {hasOpenClaw ? (
+              activeTab === 'reasoning' ? reasoningPanel : openClawPanel
+            ) : (
+              reasoningPanel
+            )}
+          </div>
         </div>
       </div>
     </div>
